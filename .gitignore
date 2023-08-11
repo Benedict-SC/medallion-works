@@ -1,0 +1,7 @@
+game-client/
+.vscode/
+devdocs/
+node_modules/
+package-lock.json
+build/
+web.config
