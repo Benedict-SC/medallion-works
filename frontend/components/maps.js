@@ -71,12 +71,9 @@ export class MapsPage extends LitElement {
   `;
   static get properties() {
     return {
-      mapData: {type:Object},
+      gs: {type:Object},
       activeTile: {type:Object},
-      activeUnit: {type:Object},
-      units: {type:Array},
-      nativeTerrain: {type:Object},
-      customTerrain: {type:Object} 
+      activeUnit: {type:Object}
     };
   }
 
@@ -85,46 +82,60 @@ export class MapsPage extends LitElement {
 
   constructor() {
     super();
-    this.mapData = {tiles:[]};
+    this.gs = window.gs;
+    this.gs.mapsComponent = this;
+    if(!this.gs.mapData){ 
+      this.gs.mapData = {tiles:[]} 
+    }
+  }
+  refreshMap(){
+    this.requestUpdate();
   }
   getMapData(){
     window.medallionAPI.getMapData("testmap.json").then(data => {
-      this.mapData = data;
-      this.units = [];
+      this.gs.mapData = data;
+      this.gs.units = [];
       let height = data.tiles.length;
       let width = data.tiles[0].length;
       for(let i = 0; i < height; i++){
-        this.units.push([]);
+        this.gs.units.push([]);
         for(let j = 0; j < width; j++){
-          this.units[i].push(null);
+          this.gs.units[i].push(null);
         }
       }
-      for(let unit of this.mapData.enemyUnits){
-        this.units[unit.y-1][unit.x-1] = unit;
+      for(let unit of this.gs.mapData.units){
+        this.gs.units[unit.y-1][unit.x-1] = unit;
       }
-      for(let unit of this.mapData.playerUnits){
-        this.units[unit.y-1][unit.x-1] = unit;
-      }
+      this.requestUpdate();
     });
     window.medallionAPI.getTerrainData().then(result => {
-      this.nativeTerrain = result.native;
-      this.customTerrain = result.custom;
+      this.gs.nativeTerrain = result.native;
+      this.gs.customTerrain = result.custom;
+      this.requestUpdate();
     });
   }
   saveMapData(){
-    window.medallionAPI.saveMapData(this.mapData,"testmap.json").then(response => {
+    let flattenedUnits = [];
+    for(let i = 0; i < this.gs.units.length; i++){
+      for(let j = 0; j < this.gs.units[0].length; j++){
+        let unit = this.gs.units[i][j];
+        if(unit){
+          unit.x = j+1;
+          unit.y = i+1;
+          flattenedUnits.push(unit);
+        }
+      }
+    }
+    this.gs.mapData.units = flattenedUnits;
+    window.medallionAPI.saveMapData(this.gs.mapData,"testmap.json").then(response => {
       console.log("%o",response);
     });
   }
-  selectUnit(x,y){
-    this.activeUnit = this.units[y][x];
-  }
   activateCell(x,y){
     this.activeTile = {x:x,y:y};
-    this.selectUnit(x,y);
   }
   valueOfActiveCell(){
-    return this.mapData.tiles[this.activeTile.y][this.activeTile.x];
+    return this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x];
   }
   isSelected(i,custom){
     let codeToCheck = (i+(custom?1001:1));
@@ -133,7 +144,7 @@ export class MapsPage extends LitElement {
   }
   alterCell(){
     let selector = this.renderRoot.querySelector("#terrain");
-    this.mapData.tiles[this.activeTile.y][this.activeTile.x] = parseInt(selector.value);
+    this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x] = parseInt(selector.value);
     this.requestUpdate();
   }
   cellClasses = ["","grass","trees","hills"];
@@ -147,12 +158,12 @@ export class MapsPage extends LitElement {
         <button @click=${this.getMapData}>Press to load map data</button>
         <div class="map-ui">
           <div class="map-grid">
-            ${this.mapData.tiles.map((row,yindex) => {
+            ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
                   return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}}>
                     ${cell}
-                    <img class="unit-img" src=${this.units[yindex][xindex] ? "game-client/" + this.units[yindex][xindex].mapSpriteFile : ""}/>
+                    <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + this.gs.units[yindex][xindex].mapSpriteFile : ""}/>
                   </div>`
                 })}
               </div>`
@@ -165,10 +176,10 @@ export class MapsPage extends LitElement {
                   html`<p>Tile ${this.activeTile.x},${this.activeTile.y} selected.</p>
                     <div class="terrain-select">
                       <select id="terrain" @change=${this.alterCell}>
-                        ${this.nativeTerrain.map((terr,i) => {
+                        ${this.gs.nativeTerrain.map((terr,i) => {
                           return staticHtml`<option value=${i+1} ${this.isSelected(i,false)}>${terr.name}</option>`
                         })}
-                        ${this.customTerrain.map((terr,i) => {
+                        ${this.gs.customTerrain.map((terr,i) => {
                           return staticHtml`<option value=${i+1001} ${this.isSelected(i,true)}>${terr.name}</option>`
                         })}
                       </select>
@@ -177,17 +188,11 @@ export class MapsPage extends LitElement {
                 : html`<p>No tile selected.</p>`
               }
             </div>
-            <div class="unit-detail">
-              ${
-                this.activeUnit ? 
-                  html`<p>There's a unit here.</p>`
-                : html`<p>---</p>`
-              }
-            </div>
+            ${this.activeTile ? html`<maps-unit-view x=${this.activeTile.x} y=${this.activeTile.y}></maps-unit-view>` : html``}            
           </div>
         </div>
         <button @click=${this.saveMapData}>Press to save map data</button>
-        <p>${JSON.stringify(this.mapData)}</p>
+        <p>${JSON.stringify(this.gs.mapData)}</p>
       </div>
     `;
   }

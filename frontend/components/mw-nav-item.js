@@ -23,7 +23,7 @@ export class MwNavItem extends LitElement {
         super();
     }
     navTo(){
-        console.log("navving to " + this.target);
+        //console.log("navving to " + this.target);
         const event = new CustomEvent("mw-nav-event", { bubbles:true, composed:true, detail: {view:this.target} });
         this.dispatchEvent(event);
     }

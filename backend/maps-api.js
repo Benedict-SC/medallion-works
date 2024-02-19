@@ -14,8 +14,24 @@ class MapsAPI{
         let mapFileBuffer = fs.readFileSync(this.mapsFolderPath + mapPath);
         return JSON.parse(mapFileBuffer.toString());
     }
+    prettyPrintArray(json) {
+        if (typeof json === 'string') {
+          json = JSON.parse(json);
+        }
+        let output = JSON.stringify(json, function(k,v) {
+          if(v instanceof Array)
+            return JSON.stringify(v);
+          return v;
+        }, 2).replace(/\\/g, '')
+              .replace(/\"\[/g, '[')
+              .replace(/\]\"/g,']')
+              .replace(/\"\{/g, '{')
+              .replace(/\}\"/g,'}');
+      
+        return output;
+    }
     saveMapData(mapObject,mapPath){
-        let mapData = JSON.stringify(mapObject);
+        let mapData = this.prettyPrintArray(mapObject);
         try{
             fs.writeFileSync(this.mapsFolderPath + mapPath,mapData);
             return "success";

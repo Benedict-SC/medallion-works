@@ -23,6 +23,7 @@ export class AppWrapper extends LitElement {
 
   constructor() {
     super();
+    window.gs = {};
     this.view = 'Home';
     this.addEventListener('mw-nav-event', (e) => this.changeView(e.detail.view));
   }
