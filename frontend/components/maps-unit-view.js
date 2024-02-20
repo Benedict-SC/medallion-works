@@ -25,19 +25,33 @@ export class MapsUnitView extends LitElement{
       border: 1px solid #BBBBBB;
       margin:2px;
     }
+    .faction-toggles-box{
+        font-size:8px;
+    }
+    .tiny-radio{
+        margin:1px;
+    }
+    .other-specifier{
+        width:70px;
+    }
   `;
   static get properties() {
     return {
       templatesLoaded: {type:Boolean},
+      otherSelected: {type:Boolean},
       x: {type:Number},
       y: {type:Number},
-      createState: {type:String} //NONE, TEMPLATE, EDIT
+      createState: {type:String} //NONE, TEMPLATE
     };
   }
+  disabledAttribute = literal`disabled`;
+  checkedAttribute = literal`checked`;
+  nothing = literal ``;
   constructor() {
     super();
     let gs = window.gs;
     this.createState = "NONE";
+    this.otherSelected = false;
     this.validLevels = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
     if(!gs.templates){
         this.templatesLoaded = false;
@@ -58,6 +72,12 @@ export class MapsUnitView extends LitElement{
     let templateIndex = parseInt(selector.value);
     selector = this.renderRoot.querySelector("#templateLevelSelect");
     let level = selector.value;
+    selector = this.renderRoot.querySelector("input[name='factionSelect']:checked");
+    let faction = selector.value;
+    if(faction == "OTHER"){
+        selector = this.renderRoot.querySelector("#otherSpecifier");
+        faction = selector.value;
+    }
     let template = window.gs.templates[templateIndex];
     let unit = new MapUnit();
     unit.str = template.str;
@@ -88,6 +108,7 @@ export class MapsUnitView extends LitElement{
     unit.mapSpriteFile = template.mapSpriteFile;
     unit.portraitFile = template.portraitFile;
     unit.classPreset = template.classPreset;
+    unit.faction = faction;
     unit.name = template.name;
     gs.units[this.y][this.x] = unit;
     gs.mapsComponent.refreshMap();
@@ -101,16 +122,81 @@ export class MapsUnitView extends LitElement{
   cancelUnitCreation(){
     this.createState = "NONE";
   }
+  enableOtherBox(){
+    this.otherBoxStatus(true);
+  }
+  disableOtherBox(){
+    this.otherBoxStatus(false);
+  }
+  toggleOtherBox(){
+    let selector = this.renderRoot.querySelector("#otherToggle");
+    this.otherSelected = selector.checked;
+  }
+  updateUnitFaction(){
+    this.toggleOtherBox();
+    let unit = window.gs.units[this.y][this.x];
+    
+    let selector = this.renderRoot.querySelector("input[name='factionSelect']:checked");
+    let faction = selector.value;
+    if(faction == "OTHER"){
+        selector = this.renderRoot.querySelector("#otherSpecifier");
+        faction = selector.value;
+    }
+    unit.faction = faction;
+  }
+  //////////////various static attribute checks
+  otherBoxStatus(){
+    if(this.otherSelected){
+        return this.nothing;
+    }else{
+        return this.disabledAttribute;
+    }
+  }
+  boxCheckedStatus(boxvalue){
+    let unit = window.gs.units[this.y][this.x];
+    if(unit.faction == boxvalue){
+        return this.checkedAttribute;
+    }else if(boxvalue == "OTHER"){
+        if(unit.faction == "PLAYER" || unit.faction == "ENEMY"){
+            return this.nothing;
+        }else{
+            return this.checkedAttribute;
+        }
+    }else{
+        return this.nothing;
+    }
+  }
   render(){
     let gs = window.gs;
+    let unitid = "unit-y" + this.y + "-x" + this.x;
+    let unit = gs.units[this.y][this.x];
+    if(unit) console.log("Selected unit's STR is " + unit.str);
+
     return html`
         <div class="unit-detail">
             ${
                 gs.units[this.y][this.x] ? 
                   html`
                     <p>There's a unit here- we'll show its details.</p>
-                    <img class="portrait-img" src=${ "game-client/" + gs.units[this.y][this.x].portraitFile }></img> - <img class="map-sprite-img" src=${ "game-client/" + gs.units[this.y][this.x].mapSpriteFile }></img>
-                    <div class="unit-name">Name: <input type="text" id=${"unit-y" + this.y + "-x" + this.x} value=${gs.units[this.y][this.x].name}></div>
+                    <img class="portrait-img" src=${ "game-client/" + unit.portraitFile }></img> - <img class="map-sprite-img" src=${ "game-client/" + unit.mapSpriteFile }></img>
+                    <div class="unit-name">Name: <input type="text" id=${unitid + "-name"} value=${unit.name}></div>
+                    <div class="faction-toggles-box">
+                        ${ staticHtml`<input class="tiny-radio" type="radio" id="enemyToggle" name="factionSelect" value="ENEMY" @change=${this.updateUnitFaction} ${this.boxCheckedStatus("ENEMY")}>`}
+                        <label for="enemyToggle">ENEMY</label>
+                        ${ staticHtml`<input class="tiny-radio" type="radio" id="playerToggle" name="factionSelect" value="PLAYER" @change=${this.updateUnitFaction} ${this.boxCheckedStatus("PLAYER")}>`}
+                        <label for="playerToggle">PLAYER</label>
+                        ${ staticHtml`<input class="tiny-radio" type="radio" id="otherToggle" name="factionSelect" value="OTHER" @change=${this.updateUnitFaction} ${this.boxCheckedStatus("OTHER")}>`}
+                        <label for="otherToggle">Other</label>
+                        ${ staticHtml`<input type="text" class="other-specifier" id="otherSpecifier" value="${unit.faction}" ${this.otherBoxStatus()}>`}
+                    </div>
+                    <div>STR: <input type="number" id=${unitid + "-str"} value=${unit.str ? unit.str : 0}></div>
+                    <div>SKL: <input type="number" id=${unitid + "-skl"} value=${unit.skl ? unit.skl : 0}></div>
+                    <div>SPD: <input type="number" id=${unitid + "-spd"} value=${unit.spd ? unit.spd : 0}></div>
+                    <div>LUK: <input type="number" id=${unitid + "-luk"} value=${unit.luk ? unit.luk : 0}></div>
+                    <div>DEF: <input type="number" id=${unitid + "-def"} value=${unit.def ? unit.def : 0}></div>
+                    <div>RES: <input type="number" id=${unitid + "-res"} value=${unit.res ? unit.res : 0}></div>
+                    <div>MOV: <input type="number" id=${unitid + "-mov"} value=${unit.mov ? unit.mov : 0}></div>
+                    <div>CON: <input type="number" id=${unitid + "-con"} value=${unit.con ? unit.con : 0}></div>
                   `
                 : this.createState == "NONE" ? html`
                     <p>No unit here.</p><br/>
@@ -123,13 +209,19 @@ export class MapsUnitView extends LitElement{
                             return html`<option value=${i}>${template.templateName}</option>`
                         })}
                     </select>
+                    <div class="faction-toggles-box">
+                        <input class="tiny-radio" type="radio" id="enemyToggle" name="factionSelect" value="ENEMY" @change=${this.toggleOtherBox} checked>
+                        <label for="enemyToggle">ENEMY</label>
+                        <input class="tiny-radio" type="radio" id="playerToggle" name="factionSelect" value="PLAYER" @change=${this.toggleOtherBox}>
+                        <label for="playerToggle">PLAYER</label>
+                        <input class="tiny-radio" type="radio" id="otherToggle" name="factionSelect" value="OTHER" @change=${this.toggleOtherBox}>
+                        <label for="otherToggle">Other</label>
+                        ${ staticHtml`<input type="text" class="other-specifier" id="otherSpecifier" value="OTHER" ${this.otherBoxStatus()}>`}
+                    </div>
                     <label for="templateLevelSelect">Level:</label>
                     <input class="templateLevelSelect" id="templateLevelSelect" type="number" min="1" max="20" value="1"></input>
                     <button @click=${this.createUnitFromTemplate}>Create unit</button>
                     </br><button @click=${this.cancelUnitCreation}>Go back</button>
-                ` : this.createState == "EDIT" ? html`
-                    <p>TODO: Implement unit editing</p>
-                    <button @click=${this.cancelUnitCreation}>Go back</button>
                 ` : html`Error: invalid state`
             }
         </div>
