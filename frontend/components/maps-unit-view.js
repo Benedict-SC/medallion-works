@@ -16,6 +16,9 @@ class MapUnit{
         this.classPreset = "DEFAULT";
         this.name = "UNITNAME";
         this.faction = "ENEMY";
+        this.level = 1;
+        this.presetWeapons = [];
+        this.presetItems = [];
     }
 }
 export class MapsUnitView extends LitElement{
@@ -34,24 +37,32 @@ export class MapsUnitView extends LitElement{
     .other-specifier{
         width:70px;
     }
+    .stat-div{
+        font-size:12px;
+    }
+    .stat-input{
+        width:50px;
+    }
+    .stat-blocks{
+        margin:3px;
+    }
   `;
   static get properties() {
     return {
-      templatesLoaded: {type:Boolean},
-      otherSelected: {type:Boolean},
-      x: {type:Number},
-      y: {type:Number},
-      createState: {type:String} //NONE, TEMPLATE
+        firstRadioRender: {type:Boolean},
+        templatesLoaded: {type:Boolean},
+        otherSelected: {type:Boolean},
+        x: {type:Number},
+        y: {type:Number},
+        createState: {type:String} //NONE, TEMPLATE
     };
   }
-  disabledAttribute = literal`disabled`;
-  checkedAttribute = literal`checked`;
-  nothing = literal ``;
   constructor() {
     super();
     let gs = window.gs;
     this.createState = "NONE";
     this.otherSelected = false;
+    this.firstRadioRender = true;
     this.validLevels = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
     if(!gs.templates){
         this.templatesLoaded = false;
@@ -110,6 +121,7 @@ export class MapsUnitView extends LitElement{
     unit.classPreset = template.classPreset;
     unit.faction = faction;
     unit.name = template.name;
+    unit.level = level;
     gs.units[this.y][this.x] = unit;
     gs.mapsComponent.refreshMap();
     this.createState = "NONE";
@@ -122,17 +134,12 @@ export class MapsUnitView extends LitElement{
   cancelUnitCreation(){
     this.createState = "NONE";
   }
-  enableOtherBox(){
-    this.otherBoxStatus(true);
-  }
-  disableOtherBox(){
-    this.otherBoxStatus(false);
-  }
   toggleOtherBox(){
     let selector = this.renderRoot.querySelector("#otherToggle");
     this.otherSelected = selector.checked;
   }
   updateUnitFaction(){
+    console.log("we're updating the faction");
     this.toggleOtherBox();
     let unit = window.gs.units[this.y][this.x];
     
@@ -144,59 +151,47 @@ export class MapsUnitView extends LitElement{
     }
     unit.faction = faction;
   }
-  //////////////various static attribute checks
-  otherBoxStatus(){
-    if(this.otherSelected){
-        return this.nothing;
-    }else{
-        return this.disabledAttribute;
-    }
+  updateStat(statname){
+    let unitid = "unit-y" + this.y + "-x" + this.x;
+    let unit = gs.units[this.y][this.x];
+    let statInput = this.renderRoot.querySelector("#" + unitid + "-" + statname);
+    unit[statname] = statInput.value;
   }
-  boxCheckedStatus(boxvalue){
-    let unit = window.gs.units[this.y][this.x];
-    if(unit.faction == boxvalue){
-        return this.checkedAttribute;
-    }else if(boxvalue == "OTHER"){
-        if(unit.faction == "PLAYER" || unit.faction == "ENEMY"){
-            return this.nothing;
-        }else{
-            return this.checkedAttribute;
-        }
-    }else{
-        return this.nothing;
-    }
-  }
+
   render(){
     let gs = window.gs;
     let unitid = "unit-y" + this.y + "-x" + this.x;
     let unit = gs.units[this.y][this.x];
-    if(unit) console.log("Selected unit's STR is " + unit.str);
-
+    if(unit){
+        this.otherSelected = ((unit.faction != "PLAYER") && (unit.faction != "ENEMY"));
+    }
     return html`
         <div class="unit-detail">
             ${
-                gs.units[this.y][this.x] ? 
+                unit ? 
                   html`
                     <p>There's a unit here- we'll show its details.</p>
                     <img class="portrait-img" src=${ "game-client/" + unit.portraitFile }></img> - <img class="map-sprite-img" src=${ "game-client/" + unit.mapSpriteFile }></img>
-                    <div class="unit-name">Name: <input type="text" id=${unitid + "-name"} value=${unit.name}></div>
+                    <div class="unit-name">Name: <input type="text" id=${unitid + "-name"} .value=${unit.name} @change=${(e) => {this.updateStat("name")}}></div>
                     <div class="faction-toggles-box">
-                        ${ staticHtml`<input class="tiny-radio" type="radio" id="enemyToggle" name="factionSelect" value="ENEMY" @change=${this.updateUnitFaction} ${this.boxCheckedStatus("ENEMY")}>`}
+                        <input class="tiny-radio" type="radio" id="enemyToggle" name="factionSelect" value="ENEMY" @change=${this.updateUnitFaction}>
                         <label for="enemyToggle">ENEMY</label>
-                        ${ staticHtml`<input class="tiny-radio" type="radio" id="playerToggle" name="factionSelect" value="PLAYER" @change=${this.updateUnitFaction} ${this.boxCheckedStatus("PLAYER")}>`}
+                        <input class="tiny-radio" type="radio" id="playerToggle" name="factionSelect" value="PLAYER" @change=${this.updateUnitFaction}>
                         <label for="playerToggle">PLAYER</label>
-                        ${ staticHtml`<input class="tiny-radio" type="radio" id="otherToggle" name="factionSelect" value="OTHER" @change=${this.updateUnitFaction} ${this.boxCheckedStatus("OTHER")}>`}
+                        <input class="tiny-radio" type="radio" id="otherToggle" name="factionSelect" value="OTHER" @change=${this.updateUnitFaction}>
                         <label for="otherToggle">Other</label>
-                        ${ staticHtml`<input type="text" class="other-specifier" id="otherSpecifier" value="${unit.faction}" ${this.otherBoxStatus()}>`}
+                        <input type="text" class="other-specifier" id="otherSpecifier" .value=${unit.faction} ?disabled=${!this.otherSelected}>
                     </div>
-                    <div>STR: <input type="number" id=${unitid + "-str"} value=${unit.str ? unit.str : 0}></div>
-                    <div>SKL: <input type="number" id=${unitid + "-skl"} value=${unit.skl ? unit.skl : 0}></div>
-                    <div>SPD: <input type="number" id=${unitid + "-spd"} value=${unit.spd ? unit.spd : 0}></div>
-                    <div>LUK: <input type="number" id=${unitid + "-luk"} value=${unit.luk ? unit.luk : 0}></div>
-                    <div>DEF: <input type="number" id=${unitid + "-def"} value=${unit.def ? unit.def : 0}></div>
-                    <div>RES: <input type="number" id=${unitid + "-res"} value=${unit.res ? unit.res : 0}></div>
-                    <div>MOV: <input type="number" id=${unitid + "-mov"} value=${unit.mov ? unit.mov : 0}></div>
-                    <div>CON: <input type="number" id=${unitid + "-con"} value=${unit.con ? unit.con : 0}></div>
+                    <div class="stat-blocks">
+                        <div class="stat-div">  STR: <input class="stat-input" type="number" id=${unitid + "-str"} .value=${unit.str ? unit.str : 0} @change=${(e) => {this.updateStat("str")}}> 
+                                                LUK: <input class="stat-input" type="number" id=${unitid + "-luk"} .value=${unit.luk ? unit.luk : 0} @change=${(e) => {this.updateStat("luk")}}></div>
+                        <div class="stat-div">  SKL: <input class="stat-input" type="number" id=${unitid + "-skl"} .value=${unit.skl ? unit.skl : 0} @change=${(e) => {this.updateStat("skl")}}>
+                                                DEF: <input class="stat-input" type="number" id=${unitid + "-def"} .value=${unit.def ? unit.def : 0} @change=${(e) => {this.updateStat("def")}}></div>
+                        <div class="stat-div">  SPD: <input class="stat-input" type="number" id=${unitid + "-spd"} .value=${unit.spd ? unit.spd : 0} @change=${(e) => {this.updateStat("spd")}}>
+                                                RES: <input class="stat-input" type="number" id=${unitid + "-res"} .value=${unit.res ? unit.res : 0} @change=${(e) => {this.updateStat("res")}}></div>
+                        <div class="stat-div">  CON: <input class="stat-input" type="number" id=${unitid + "-con"} .value=${unit.con ? unit.con : 0} @change=${(e) => {this.updateStat("con")}}>
+                                                MOV: <input class="stat-input" type="number" id=${unitid + "-mov"} .value=${unit.mov ? unit.mov : 0} @change=${(e) => {this.updateStat("res")}}></div>
+                    </div>
                   `
                 : this.createState == "NONE" ? html`
                     <p>No unit here.</p><br/>
@@ -216,7 +211,7 @@ export class MapsUnitView extends LitElement{
                         <label for="playerToggle">PLAYER</label>
                         <input class="tiny-radio" type="radio" id="otherToggle" name="factionSelect" value="OTHER" @change=${this.toggleOtherBox}>
                         <label for="otherToggle">Other</label>
-                        ${ staticHtml`<input type="text" class="other-specifier" id="otherSpecifier" value="OTHER" ${this.otherBoxStatus()}>`}
+                        <input type="text" class="other-specifier" id="otherSpecifier" value="OTHER" ?disabled=${!this.otherSelected}>
                     </div>
                     <label for="templateLevelSelect">Level:</label>
                     <input class="templateLevelSelect" id="templateLevelSelect" type="number" min="1" max="20" value="1"></input>
@@ -226,6 +221,19 @@ export class MapsUnitView extends LitElement{
             }
         </div>
     `
+  }
+  updated(){
+        let gs = window.gs;
+        let unit = gs.units[this.y][this.x];
+        if(unit){
+            let checkbox = this.renderRoot.querySelector("#otherToggle");
+            if(unit.faction == "PLAYER"){
+                checkbox = this.renderRoot.querySelector("#playerToggle");
+            }else if(unit.faction == "ENEMY"){
+                checkbox = this.renderRoot.querySelector("#enemyToggle");
+            }//else it stays Other
+            checkbox.checked = true;
+        }
   }
 }
 window.customElements.define('maps-unit-view', MapsUnitView);

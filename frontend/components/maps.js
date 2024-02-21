@@ -115,6 +115,7 @@ export class MapsPage extends LitElement {
     });
   }
   saveMapData(){
+    this.validateUnits();
     let flattenedUnits = [];
     for(let i = 0; i < this.gs.units.length; i++){
       for(let j = 0; j < this.gs.units[0].length; j++){
@@ -150,6 +151,60 @@ export class MapsPage extends LitElement {
   cellClasses = ["","grass","trees","hills"];
   cellClass(cell){
     return "map-cell" + ((cell <= 0 || cell >= this.cellClasses.length) ? "" : " " + this.cellClasses[cell]);
+  }
+  validateUnits(){
+    for(let i = 0; i < this.gs.units.length; i++){
+      for(let j = 0; j < this.gs.units[0].length; j++){
+        let unit = this.gs.units[i][j];
+        if(unit){
+          if(unit.name == undefined){
+            unit.name = "";
+          }
+          if(unit.faction == undefined){
+            unit.faction = "";
+          }
+          if(unit.level == undefined){
+            unit.level = 1;
+          }
+          if(unit.str == undefined){
+            unit.str = 0;
+          }
+          if(unit.maxhp == undefined){
+            unit.maxhp = 1;
+          }
+          if(unit.hp == undefined){
+            unit.hp = unit.maxhp;
+          }
+          if(unit.skl == undefined){
+            unit.skl = 0;
+          }
+          if(unit.spd == undefined){
+            unit.spd = 0;
+          }
+          if(unit.luk == undefined){
+            unit.luk = 0;
+          }
+          if(unit.def == undefined){
+            unit.def = 0;
+          }
+          if(unit.res == undefined){
+            unit.res = 0;
+          }
+          if(unit.mov == undefined){
+            unit.mov = 1;
+          }
+          if(unit.con == undefined){
+            unit.con = 0;
+          }
+          if(unit.presetWeapons == undefined){
+            unit.presetWeapons = [];
+          }
+          if(unit.presetItems == undefined){
+            unit.presetItems = [];
+          }
+        }
+      }
+    }
   }
   render() {
     return html`
