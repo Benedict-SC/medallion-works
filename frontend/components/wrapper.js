@@ -4,6 +4,7 @@ export class AppWrapper extends LitElement {
   static styles = css`
     .global-styles{
       font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+      margin:2px;
     }
     .mw-title{
       font-size:20px;
@@ -24,6 +25,7 @@ export class AppWrapper extends LitElement {
   constructor() {
     super();
     window.gs = {};
+    window.gs.mousedown = false;
     this.view = 'Home';
     this.addEventListener('mw-nav-event', (e) => this.changeView(e.detail.view));
   }
@@ -41,9 +43,18 @@ export class AppWrapper extends LitElement {
       return html`<span>Invalid view.</span>`
     }
   }
+  mousedown(){
+    window.gs.mousedown = true;
+  }
+  mouseup(){
+    window.gs.mousedown = false;
+  }
+  mousein(){
+    window.gs.mousedown = false;
+  }
   render() {
     return html`
-      <div class="global-styles">
+      <div class="global-styles" @mouseup=${this.mouseup} @mousedown=${this.mousedown} @mouseover=${this.mousein}>
         <div class="mw-title">Medallion Works content management tool</div>
         <div class="navbar">
           <mw-nav-item target="Maps" text="Edit Maps"></mw-nav-item>

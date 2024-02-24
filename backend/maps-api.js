@@ -9,6 +9,7 @@ class MapsAPI{
         mapsFiles.forEach(f => {
             this.populateMapPaths(f);
         });
+        this.mapFilenames.reverse();
     }
     getMapData(mapPath){
         let mapFileBuffer = fs.readFileSync(this.mapsFolderPath + mapPath);

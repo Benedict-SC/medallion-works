@@ -7,6 +7,9 @@ const templates = new TemplatesAPI();
 async function retrieveMapData(filename){
     return maps.getMapData(filename);
 }
+async function getMapsList(){
+    return maps.mapFilenames;
+}
 async function saveMapData(data,filename){
     return maps.saveMapData(data,filename);
 }
@@ -27,6 +30,9 @@ const createWindow = function(){
     win.loadFile("index.html");
 }
 app.whenReady().then(() => {
+    ipcMain.handle("maps-wants-maps-list",async (event) => {
+        return await getMapsList();
+    });
     ipcMain.handle("maps-wants-maps-data",async (event,filename) => {
         return await retrieveMapData(filename);
     });

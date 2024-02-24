@@ -5,17 +5,34 @@ export class MapsPage extends LitElement {
     .navbar {
       background-color:rgb(240, 240, 240);
     }
+    .newmap-filename-input{
+      text-align:right;
+    }
     .map-ui{
       display:flex;
+      user-select: none;
     }
     .map-grid { 
       flex:2.5;
       overflow:scroll;
       max-height:90vh;
       min-height:300px;
+      background-color:#555555;
+    }
+    .map-toolbar{
+      background-color:#444444;
+      width:100%;
+      padding:4px;
+    }
+    .toolbar-button{
+      background-color:#888888;
+      padding:3px;
+    }
+    .toolbar-selected{
+      background-color: #666666;
     }
     .map-row {
-      background-color:#F8F8F8;
+      margin-bottom:-7px;
       width:fit-content;
       white-space:nowrap;
     }
@@ -72,8 +89,12 @@ export class MapsPage extends LitElement {
   static get properties() {
     return {
       gs: {type:Object},
+      maplist: {type:Array},
+      currentMapName: {type:String},
       activeTile: {type:Object},
-      activeUnit: {type:Object}
+      activeUnit: {type:Object},
+      selectedTool: {type:String}, //select, paint, move
+      paintingTileID: {type:Number}
     };
   }
 
@@ -84,15 +105,27 @@ export class MapsPage extends LitElement {
     super();
     this.gs = window.gs;
     this.gs.mapsComponent = this;
+    this.selectedTool = "select";
+    this.paintingTileID = 1;
     if(!this.gs.mapData){ 
       this.gs.mapData = {tiles:[]} 
     }
+    if(!this.maplist){
+      this.maplist = [];
+    }
+    window.medallionAPI.getTerrainData().then(result => {
+      this.gs.nativeTerrain = result.native;
+      this.gs.customTerrain = result.custom;
+    });
   }
   refreshMap(){
     this.requestUpdate();
   }
   getMapData(){
-    window.medallionAPI.getMapData("testmap.json").then(data => {
+    let selector = this.renderRoot.querySelector("#map-selector");
+    let mapfile = selector.value;
+    this.currentMapName = mapfile;
+    window.medallionAPI.getMapData(mapfile).then(data => {
       this.gs.mapData = data;
       this.gs.units = [];
       let height = data.tiles.length;
@@ -106,11 +139,6 @@ export class MapsPage extends LitElement {
       for(let unit of this.gs.mapData.units){
         this.gs.units[unit.y-1][unit.x-1] = unit;
       }
-      this.requestUpdate();
-    });
-    window.medallionAPI.getTerrainData().then(result => {
-      this.gs.nativeTerrain = result.native;
-      this.gs.customTerrain = result.custom;
       this.requestUpdate();
     });
   }
@@ -128,15 +156,33 @@ export class MapsPage extends LitElement {
       }
     }
     this.gs.mapData.units = flattenedUnits;
-    window.medallionAPI.saveMapData(this.gs.mapData,"testmap.json").then(response => {
+    window.medallionAPI.saveMapData(this.gs.mapData,this.currentMapName).then(response => {
       console.log("%o",response);
     });
   }
   activateCell(x,y){
-    this.activeTile = {x:x,y:y};
+    if(this.selectedTool == "select"){
+      this.activeTile = {x:x,y:y};
+    }
+  }
+  mousedown(x,y){
+    if(this.selectedTool == "paint"){
+      this.paintCell(x,y);
+    }
   }
   valueOfActiveCell(){
-    return this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x];
+    return this.valueOfCell(this.activeTile.x,this.activeTile.y);
+  }
+  valueOfCell(x,y){
+    return this.gs.mapData.tiles[y][x];
+  }
+  getImagePathFromCellCode(code){
+    let index = (code > 1000) ? (code-1001) : (code - 1);
+    if(code > 1000){
+      return this.gs.customTerrain[index].imgPath;
+    }else{
+      return this.gs.nativeTerrain[index].imgPath;
+    }
   }
   isSelected(i,custom){
     let codeToCheck = (i+(custom?1001:1));
@@ -148,9 +194,61 @@ export class MapsPage extends LitElement {
     this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x] = parseInt(selector.value);
     this.requestUpdate();
   }
+  paintCell(x,y){
+    this.gs.mapData.tiles[y][x] = this.paintingTileID;
+    this.requestUpdate();
+  }
+  validateMapFilename(){
+    let selector = this.renderRoot.querySelector("#newmap-filepath");
+    selector.value = selector.value.replace(/[^a-zA-Z0-9-_\/]/, '');
+  }
+  createNewMap(){
+    let selector = this.renderRoot.querySelector("#newmap-filepath");
+    let newfilename = selector.value;
+    if(!newfilename || newfilename.length < 1)
+      return;
+    selector = this.renderRoot.querySelector("#newmap-width");
+    let w = selector.value;
+    selector = this.renderRoot.querySelector("#newmap-height");
+    let h = selector.value;
+    this.gs.mapData = {tiles:[]}
+    this.gs.units = [];
+    for(let i = 0; i < h; i++){
+      let row = [];
+      let unitrow = [];
+      for(let j = 0; j < w; j++){
+        row.push(1); //fill with grass
+        unitrow.push(null); //no units here
+      }
+      this.gs.mapData.tiles.push(row);
+      this.gs.units.push(unitrow);
+    }
+    this.currentMapName = newfilename + ".json";
+    this.requestUpdate();
+  }
   cellClasses = ["","grass","trees","hills"];
   cellClass(cell){
     return "map-cell" + ((cell <= 0 || cell >= this.cellClasses.length) ? "" : " " + this.cellClasses[cell]);
+  }
+  toolSelectionClass(id){
+    let tclass = "toolbar-button";
+    if(id == this.selectedTool){
+      return tclass + " toolbar-selected";
+    }else{
+      return tclass;
+    }
+  }
+  selectTool(id){
+    this.selectedTool = id;
+  }
+  selectPaintbrush(){
+    let selector = this.renderRoot.querySelector("#terrain");
+    this.paintingTileID = parseInt(selector.value);
+  }
+  mouseover(x,y){
+    if(this.selectedTool == "paint" && this.gs.mousedown){
+      this.paintCell(x,y);
+    }
   }
   validateUnits(){
     for(let i = 0; i < this.gs.units.length; i++){
@@ -210,21 +308,35 @@ export class MapsPage extends LitElement {
     return html`
       <div>
         <p>Maps go here.</p>
+        <select id="map-selector">
+          ${this.maplist.map((mapname,index) => {
+            return html`<option value=${mapname}>${mapname}</option>`
+          })}
+        </select>
         <button @click=${this.getMapData}>Press to load map data</button>
+        <div>
+          Or create a new map: <input id="newmap-width" type="number" value="1" min="1" max="60"/> wide by <input id="newmap-height" type="number" value="1" min="1" max="60"/> tall, save to <input id="newmap-filepath" class="newmap-filename-input" type="text" maxlength="32" @keyup=${this.validateMapFilename}>.json <button @click=${this.createNewMap}>Create</button>
+        </div>
         <div class="map-ui">
           <div class="map-grid">
+            <div class="map-toolbar">
+              <button class=${this.toolSelectionClass("select")} @click=${(e) => {this.selectTool("select");}}><img src="frontend/assets/select-icon.png"/></button>
+              <button class=${this.toolSelectionClass("paint")} @click=${(e) => {this.selectTool("paint");}}><img src="frontend/assets/paint-icon.png"/></button>  
+              <button class=${this.toolSelectionClass("move")} @click=${(e) => {this.selectTool("move");}}><img src="frontend/assets/move-icon.png"/></button>             
+            </div>
             ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
-                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}}>
-                    ${cell}
-                    <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + this.gs.units[yindex][xindex].mapSpriteFile : ""}/>
+                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}}>
+                    <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + this.gs.units[yindex][xindex].mapSpriteFile : ""} draggable="false"/>
                   </div>`
                 })}
               </div>`
             })}
           </div>
           <div class="tile-detail">
+          ${this.selectedTool == "select" ?
+            html`
             <div class="terrain-detail">
               ${
                 this.activeTile ?
@@ -243,13 +355,35 @@ export class MapsPage extends LitElement {
                 : html`<p>No tile selected.</p>`
               }
             </div>
-            ${this.activeTile ? html`<maps-unit-view x=${this.activeTile.x} y=${this.activeTile.y}></maps-unit-view>` : html``}            
+            ${this.activeTile ? html`<maps-unit-view x=${this.activeTile.x} y=${this.activeTile.y}></maps-unit-view>` : html``}
+            ` : 
+            this.selectedTool == "paint" ? html`
+              <div class="terrain-select">
+                <select id="terrain" @change=${this.selectPaintbrush}>
+                  ${this.gs.nativeTerrain.map((terr,i) => {
+                    return html`<option value=${i+1} ?selected=${i==0}>${terr.name}</option>`
+                  })}
+                  ${this.gs.customTerrain.map((terr,i) => {
+                    return html`<option value=${i+1001}>${terr.name}</option>`
+                  })}
+                </select>
+              </div>
+            ` :
+            this.selectedTool == "move" ? html`
+            
+            ` : html`` 
+          }            
           </div>
         </div>
         <button @click=${this.saveMapData}>Press to save map data</button>
         <p>${JSON.stringify(this.gs.mapData)}</p>
       </div>
     `;
+  }
+  updated(){
+    if(this.maplist.length == 0){
+      window.medallionAPI.getMapsList().then(result => this.maplist = result);
+    }
   }
 }
 window.customElements.define('maps-page', MapsPage);
