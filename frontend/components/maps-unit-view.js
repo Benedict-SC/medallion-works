@@ -169,8 +169,10 @@ export class MapsUnitView extends LitElement{
         <div class="unit-detail">
             ${
                 unit ? 
+                unit.armyId ? html`
+                    <p>Pre-positioned player unit is here (${unit.armyId}). Data is pulled from the army object in the savefile.</p>
+                ` :
                   html`
-                    <p>There's a unit here- we'll show its details.</p>
                     <img class="portrait-img" src=${ "game-client/" + unit.portraitFile }></img> - <img class="map-sprite-img" src=${ "game-client/" + unit.mapSpriteFile }></img>
                     <div class="unit-name">Name: <input type="text" id=${unitid + "-name"} .value=${unit.name} @change=${(e) => {this.updateStat("name")}}></div>
                     <div class="faction-toggles-box">
@@ -225,7 +227,7 @@ export class MapsUnitView extends LitElement{
   updated(){
         let gs = window.gs;
         let unit = gs.units[this.y][this.x];
-        if(unit){
+        if(unit && !unit.armyId){
             let checkbox = this.renderRoot.querySelector("#otherToggle");
             if(unit.faction == "PLAYER"){
                 checkbox = this.renderRoot.querySelector("#playerToggle");

@@ -92,7 +92,6 @@ export class MapsPage extends LitElement {
       maplist: {type:Array},
       currentMapName: {type:String},
       activeTile: {type:Object},
-      activeUnit: {type:Object},
       selectedTool: {type:String}, //select, paint, move
       paintingTileID: {type:Number}
     };
@@ -128,6 +127,7 @@ export class MapsPage extends LitElement {
     window.medallionAPI.getMapData(mapfile).then(data => {
       this.gs.mapData = data;
       this.gs.units = [];
+      this.activeTile = {x:0,y:0};
       let height = data.tiles.length;
       let width = data.tiles[0].length;
       for(let i = 0; i < height; i++){
@@ -255,6 +255,9 @@ export class MapsPage extends LitElement {
       for(let j = 0; j < this.gs.units[0].length; j++){
         let unit = this.gs.units[i][j];
         if(unit){
+          if(unit.armyId){
+            continue; //skip unit placeholders
+          }
           if(unit.name == undefined){
             unit.name = "";
           }
@@ -328,7 +331,7 @@ export class MapsPage extends LitElement {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
                   return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}}>
-                    <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + this.gs.units[yindex][xindex].mapSpriteFile : ""} draggable="false"/>
+                    <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + (this.gs.units[yindex][xindex].mapSpriteFile ? this.gs.units[yindex][xindex].mapSpriteFile : "assets/img/qmark.png") : ""} draggable="false"/>
                   </div>`
                 })}
               </div>`
