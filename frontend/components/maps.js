@@ -64,6 +64,12 @@ export class MapsPage extends LitElement {
       left:-2px;
       top:-1px;
     }
+    .starting-position-img{
+      position:absolute;
+      left:-2px;
+      top:-1px;
+      pointer-events:none;
+    }
     .grass {
       background-color: #d0e7b7;
       border: 2px solid #d0e7b7;
@@ -130,7 +136,15 @@ export class MapsPage extends LitElement {
       this.activeTile = {x:0,y:0};
       let height = data.tiles.length;
       let width = data.tiles[0].length;
-      for(let i = 0; i < height; i++){
+      for(let i = 0; i < height; i++){ //validate map data- we used to have map tiles be number codes rather than objects
+        for(let j = 0; j < width; j++){
+          let value = data.tiles[i][j];
+          if(!(value.tile) && Number.isInteger(value)){
+            this.gs.mapData.tiles[i][j] = {tile:value};
+          }
+        }
+      }//we could do this next part in the same loop but let's keep them separate so it's clear what they do
+      for(let i = 0; i < height; i++){ //store the units array in a 2D array
         this.gs.units.push([]);
         for(let j = 0; j < width; j++){
           this.gs.units[i].push(null);
@@ -174,7 +188,7 @@ export class MapsPage extends LitElement {
     return this.valueOfCell(this.activeTile.x,this.activeTile.y);
   }
   valueOfCell(x,y){
-    return this.gs.mapData.tiles[y][x];
+    return this.gs.mapData.tiles[y][x].tile;
   }
   getImagePathFromCellCode(code){
     let index = (code > 1000) ? (code-1001) : (code - 1);
@@ -191,12 +205,22 @@ export class MapsPage extends LitElement {
   }
   alterCell(){
     let selector = this.renderRoot.querySelector("#terrain");
-    this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x] = parseInt(selector.value);
+    this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x].tile = parseInt(selector.value);
     this.requestUpdate();
   }
   paintCell(x,y){
-    this.gs.mapData.tiles[y][x] = this.paintingTileID;
-    this.requestUpdate();
+    let selector = this.renderRoot.querySelector("input[name='paintbrush-select']:checked");
+    let cell = this.gs.mapData.tiles[y][x];
+    if(selector.value == "TERRAIN"){
+      cell.tile = this.paintingTileID;
+      this.requestUpdate();
+    }else if(selector.value == "ERASE"){
+      cell.isStartingPosition = false;
+      this.requestUpdate();
+    }else if(selector.value == "STARTINGS"){
+      cell.isStartingPosition = true;
+      this.requestUpdate();
+    }
   }
   validateMapFilename(){
     let selector = this.renderRoot.querySelector("#newmap-filepath");
@@ -217,7 +241,7 @@ export class MapsPage extends LitElement {
       let row = [];
       let unitrow = [];
       for(let j = 0; j < w; j++){
-        row.push(1); //fill with grass
+        row.push({tile:1}); //fill with grass
         unitrow.push(null); //no units here
       }
       this.gs.mapData.tiles.push(row);
@@ -330,7 +354,12 @@ export class MapsPage extends LitElement {
             ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
-                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}}>
+                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell.tile) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}}>
+                    ${
+                      cell.isStartingPosition ? html`
+                        <img class="starting-position-img" src="game-client/assets/img/startingPosition.png" draggable="false">
+                      ` : html``
+                    }
                     <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + (this.gs.units[yindex][xindex].mapSpriteFile ? this.gs.units[yindex][xindex].mapSpriteFile : "assets/img/qmark.png") : ""} draggable="false"/>
                   </div>`
                 })}
@@ -370,6 +399,11 @@ export class MapsPage extends LitElement {
                     return html`<option value=${i+1001}>${terr.name}</option>`
                   })}
                 </select>
+                <input class="paint-radio" type="radio" name="paintbrush-select" id="terrain" value="TERRAIN" checked><br/>
+                <label for="erase-special">Erase special features</label>
+                <input class="paint-radio" type="radio" name="paintbrush-select" id="erase-special" value="ERASE">
+                <label for="paint-startings">Starting tiles</label>
+                <input class="paint-radio" type="radio" name="paintbrush-select" id="paint-startings" value="STARTINGS">
               </div>
             ` :
             this.selectedTool == "move" ? html`
