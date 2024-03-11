@@ -64,6 +64,12 @@ export class MapsPage extends LitElement {
       left:-2px;
       top:-1px;
     }
+    .ghost-unit{
+      position:absolute;
+      left:-2px;
+      top:-1px;
+      opacity:50%;
+    }
     .starting-position-img{
       position:absolute;
       left:-2px;
@@ -98,6 +104,9 @@ export class MapsPage extends LitElement {
       maplist: {type:Array},
       currentMapName: {type:String},
       activeTile: {type:Object},
+      movingUnit: {type:Object},
+      movingSourceCell: {type:Object},
+      movingHoversOver: {type:Object},
       selectedTool: {type:String}, //select, paint, move
       paintingTileID: {type:Number}
     };
@@ -179,11 +188,6 @@ export class MapsPage extends LitElement {
       this.activeTile = {x:x,y:y};
     }
   }
-  mousedown(x,y){
-    if(this.selectedTool == "paint"){
-      this.paintCell(x,y);
-    }
-  }
   valueOfActiveCell(){
     return this.valueOfCell(this.activeTile.x,this.activeTile.y);
   }
@@ -252,7 +256,7 @@ export class MapsPage extends LitElement {
   }
   cellClasses = ["","grass","trees","hills"];
   cellClass(cell){
-    return "map-cell" + ((cell <= 0 || cell >= this.cellClasses.length) ? "" : " " + this.cellClasses[cell]);
+    return "map-cell" + ((cell.tile <= 0 || cell.tile >= this.cellClasses.length) ? "" : " " + this.cellClasses[cell.tile]);
   }
   toolSelectionClass(id){
     let tclass = "toolbar-button";
@@ -269,9 +273,33 @@ export class MapsPage extends LitElement {
     let selector = this.renderRoot.querySelector("#terrain");
     this.paintingTileID = parseInt(selector.value);
   }
+  mousedown(x,y){
+    if(this.selectedTool == "paint"){
+      this.paintCell(x,y);
+    }else if(this.selectedTool == "move"){
+      this.movingSourceCell = {x:x,y:y};
+      this.movingUnit = this.gs.units[y][x];
+    }
+  }
   mouseover(x,y){
     if(this.selectedTool == "paint" && this.gs.mousedown){
       this.paintCell(x,y);
+    }else if(this.selectedTool == "move"){
+      this.movingHoversOver = {x:x,y:y};
+    }
+  }
+  mouseup(x,y){
+    if(this.selectedTool == "move" && this.movingUnit && this.movingHoversOver){
+      let unitAt = this.gs.units[y][x];
+      this.gs.units[y][x] = this.movingUnit;
+      if(unitAt){ //swap with it
+        this.gs.units[this.movingSourceCell.y][this.movingSourceCell.x] = unitAt;
+      }else{
+        this.gs.units[this.movingSourceCell.y][this.movingSourceCell.x] = null;
+      }
+      this.movingSourceCell = null;
+      this.movingUnit = null;
+      this.movingHoversOver = null;
     }
   }
   validateUnits(){
@@ -354,13 +382,18 @@ export class MapsPage extends LitElement {
             ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
-                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell.tile) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}}>
+                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell.tile) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}} @mouseup=${() => {this.mouseup(xindex,yindex)}}>
                     ${
                       cell.isStartingPosition ? html`
                         <img class="starting-position-img" src="game-client/assets/img/startingPosition.png" draggable="false">
                       ` : html``
                     }
                     <img class="unit-img" src=${this.gs.units[yindex][xindex] ? "game-client/" + (this.gs.units[yindex][xindex].mapSpriteFile ? this.gs.units[yindex][xindex].mapSpriteFile : "assets/img/qmark.png") : ""} draggable="false"/>
+                    ${
+                        (this.movingHoversOver && (xindex == this.movingHoversOver.x) && (yindex == this.movingHoversOver.y)) ? html`
+                        <img class="ghost-unit" src=${this.movingUnit ? "game-client/" + (this.movingUnit.mapSpriteFile ? this.movingUnit.mapSpriteFile : "assets/img/qmark.png") : ""} draggable="false"/>
+                        ` : html``
+                    }
                   </div>`
                 })}
               </div>`

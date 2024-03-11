@@ -2,8 +2,10 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require("path");
 const MapsAPI = require("./backend/maps-api");
 const TemplatesAPI = require('./backend/templates-api');
+const SpritesAPI = require('./backend/sprites-api');
 const maps = new MapsAPI();
 const templates = new TemplatesAPI();
+const sprites = new SpritesAPI();
 async function retrieveMapData(filename){
     return maps.getMapData(filename);
 }
@@ -18,6 +20,9 @@ async function retrieveTerrainData(){
 }
 async function retrieveTemplatesData(){
     return templates.getTemplatesData();
+}
+async function getSpriteGallery(){
+    return sprites.getAllSpriteData();
 }
 const createWindow = function(){
     const win = new BrowserWindow({
@@ -45,6 +50,9 @@ app.whenReady().then(() => {
     ipcMain.handle("maps-wants-templates-data",async (event) => {
         return await retrieveTemplatesData();
     });
+    ipcMain.handle("sprites-wants-file-data",async (event) => {
+        return await getSpriteGallery();
+    })
     createWindow();
     BrowserWindow.getAllWindows()[0].openDevTools();
 });
