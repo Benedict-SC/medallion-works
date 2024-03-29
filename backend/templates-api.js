@@ -1,13 +1,18 @@
 const fs = require("fs");
 class TemplatesAPI{
     templatesPath = "./game-client/custom/units/templates.json"
+    loadedTemplates = null;
     constructor(){
     }
     getTemplatesData(){
-        let templatesFileBuffer = fs.readFileSync(this.templatesPath);
-        return JSON.parse(templatesFileBuffer.toString());
+        if(!this.loadedTemplates){
+            let templatesFileBuffer = fs.readFileSync(this.templatesPath);
+            this.loadedTemplates = JSON.parse(templatesFileBuffer.toString());
+        }
+        return this.loadedTemplates;
     }
     saveTemplatesData(templatesObject){
+        this.loadedTemplates = templatesObject;
         let templatesData = JSON.stringify(templatesObject);
         try{
             fs.writeFileSync(this.templatesPath,templatesData);

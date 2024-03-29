@@ -40,7 +40,8 @@ export class SpritesPage extends LitElement {
   `;
   static get properties() {
     return {
-      fileslist: {type:Array}
+      topFolder: {type:Object},
+      folder: {type:Object}
     };
   }
   bankPrefix = "./game-client/custom/img/";
@@ -48,27 +49,55 @@ export class SpritesPage extends LitElement {
   constructor() {
     super();
     window.medallionAPI.getSpriteGallery().then(data => {
-      this.fileslist = data;
-      console.log("data: %o",this.fileslist);
+      this.topFolder = data;
+      this.folder = data;
     });
   }
+  openFolder(folder){
+    this.folder = folder;
+  }
+  backUp(){
+    this.folder = this.folder.parent;
+  }
   render() {
-    if(this.fileslist){
+    if(this.folder){
     return html`
       <div>
         <div class="file-browser">
           <div class="file-row">
-              ${this.fileslist.map((filename,index) => {
+              ${
+                (this.folder != this.topFolder) ?
+                    html`
+                    <div class="file-container">
+                        <div class="file-img-box">
+                            <img class="file-img" @dblclick=${this.backUp} src="./frontend/assets/parentfolder.png">
+                        </div>
+                        <div class="file-label">&nbsp;</div>
+                    </div>`
+                  : html``
+              }
+              ${this.folder.folderContents.map((file,index) => {
                 return html`
                 <div class="file-container">
                   <div class="file-img-box">
-                    <img class="file-img" src="${this.bankPrefix + filename}">
+                    ${
+                      file.folderContents ? 
+                        html`
+                        <img class="file-img" @dblclick=${() => {this.openFolder(file)}} src="./frontend/assets/folder.png">
+                        `
+                      : html` 
+                        <img class="file-img" src="${this.folder.prefix + this.folder.name + "/" + file.name}">
+                      `
+                    }
                   </div>
-                  <div class="file-label">${filename}</div>
+                  <div class="file-label">${file.name}</div>
                 </div>
                 `
               })}
           </div>
+        </div>
+        <div class="file-upload-station">
+              <input type="file" id="sprite-upload-button" name="sprite-upload" accept="image/png"/>
         </div>
       </div>
     `;
