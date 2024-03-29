@@ -41,7 +41,8 @@ export class SpritesPage extends LitElement {
   static get properties() {
     return {
       topFolder: {type:Object},
-      folder: {type:Object}
+      folder: {type:Object},
+      isEmbeddedSelector: {type:Boolean}
     };
   }
   bankPrefix = "./game-client/custom/img/";
@@ -55,6 +56,12 @@ export class SpritesPage extends LitElement {
   }
   openFolder(folder){
     this.folder = folder;
+  }
+  selectFile(file){
+    if(this.isEmbeddedSelector){
+      const event = new CustomEvent("file-selected-event", { bubbles:true, composed:true, detail: file.prefix + file.name });
+      this.dispatchEvent(event);
+    }
   }
   backUp(){
     this.folder = this.folder.parent;
@@ -86,7 +93,7 @@ export class SpritesPage extends LitElement {
                         <img class="file-img" @dblclick=${() => {this.openFolder(file)}} src="./frontend/assets/folder.png">
                         `
                       : html` 
-                        <img class="file-img" src="${this.folder.prefix + this.folder.name + "/" + file.name}">
+                        <img class="file-img" @dblclick=${() => {this.selectFile(file)}} src="${this.folder.prefix + this.folder.name + "/" + file.name}">
                       `
                     }
                   </div>
@@ -98,6 +105,7 @@ export class SpritesPage extends LitElement {
         </div>
         <div class="file-upload-station">
               <input type="file" id="sprite-upload-button" name="sprite-upload" accept="image/png"/>
+              <button>Upload here</button>
         </div>
       </div>
     `;

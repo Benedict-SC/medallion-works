@@ -21,6 +21,9 @@ async function retrieveTerrainData(){
 async function retrieveTemplatesData(){
     return templates.getTemplatesData();
 }
+async function saveTemplatesData(data){
+    return templates.saveTemplatesData(data);
+}
 async function getSpriteGallery(){
     return sprites.getAllSpriteData();
 }
@@ -49,6 +52,9 @@ app.whenReady().then(() => {
     });
     ipcMain.handle("maps-wants-templates-data",async (event) => {
         return await retrieveTemplatesData();
+    });
+    ipcMain.handle("units-saving-templates-data",async (event,data) => {
+        return await saveTemplatesData(data);
     });
     ipcMain.handle("sprites-wants-file-data",async (event) => {
         return await getSpriteGallery();

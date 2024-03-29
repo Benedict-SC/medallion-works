@@ -15,6 +15,10 @@ export class AppWrapper extends LitElement {
     .navbar {
       background-color:rgb(240, 240, 240);
     }
+    .picker{
+      position:absolute;
+      top:0;
+    }
   `;
   static get properties() {
     return {
@@ -66,6 +70,7 @@ export class AppWrapper extends LitElement {
         <div>
           ${this.getView()}
         </div>
+        <picker-modal class="picker"></picker-modal>
       </div>
     `;
   }
