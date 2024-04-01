@@ -31,6 +31,7 @@ export class SpritesPage extends LitElement {
     }
     .file-img{
       width:100%;
+      height:100%;
     }
     .file-label{
       margin:auto;
@@ -54,6 +55,23 @@ export class SpritesPage extends LitElement {
       this.folder = data;
     });
   }
+  reload(){
+    let currentPrefix = this.folder.prefix;
+    let currentName = this.folder.name;
+    window.medallionAPI.getSpriteGallery().then(data => {
+      this.topFolder = data;
+      this.navigateToFolder(currentPrefix,currentName);
+    });
+  }
+  navigateToFolder(prefix,name){
+    let rootNames = (this.topFolder.prefix + this.topFolder.name).split("/");
+    let names = (prefix+name).split("/").slice(rootNames.length);
+    let currentFolder = this.topFolder;
+    for(let i = 0; i < names.length; i++){
+      currentFolder = currentFolder.folderContents.find(x => x.name == names[i]);
+    }
+    this.folder = currentFolder;
+  }
   openFolder(folder){
     this.folder = folder;
   }
@@ -61,6 +79,28 @@ export class SpritesPage extends LitElement {
     if(this.isEmbeddedSelector){
       const event = new CustomEvent("file-selected-event", { bubbles:true, composed:true, detail: file.prefix + file.name });
       this.dispatchEvent(event);
+    }
+  }
+  uploadFile(){
+    let selector = this.renderRoot.querySelector("#sprite-upload-button");
+    let file = selector.files[0];
+    if(!file){
+      return;
+    }
+    let pathSegments = file.path.split("\\");
+    let filename = pathSegments[pathSegments.length - 1];
+    let folderpath = this.folder.prefix + this.folder.name + "/";
+    let exists = this.folder.folderContents.find(x => x.name == filename);
+    let okToUpload = true;
+    if(exists){
+      okToUpload = confirm(filename + " already exists. Would you like to overwrite it?");
+    }
+    if(okToUpload){
+      window.medallionAPI.uploadSprite(file.path,folderpath,filename).then(response => {
+        this.reload();
+      }).catch(err => {
+        console.log("error: %o",err);
+      });      
     }
   }
   backUp(){
@@ -105,7 +145,8 @@ export class SpritesPage extends LitElement {
         </div>
         <div class="file-upload-station">
               <input type="file" id="sprite-upload-button" name="sprite-upload" accept="image/png"/>
-              <button>Upload here</button>
+              <button @click=${this.uploadFile}>Upload here</button>
+              <button @click=${this.reload}>Test reload</button>
         </div>
       </div>
     `;

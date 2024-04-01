@@ -27,6 +27,9 @@ async function saveTemplatesData(data){
 async function getSpriteGallery(){
     return sprites.getAllSpriteData();
 }
+async function uploadSprite(path,location,filename){
+    return sprites.uploadSprite(path,location,filename);
+}
 const createWindow = function(){
     const win = new BrowserWindow({
         width:1400,height:720,
@@ -58,7 +61,10 @@ app.whenReady().then(() => {
     });
     ipcMain.handle("sprites-wants-file-data",async (event) => {
         return await getSpriteGallery();
-    })
+    });
+    ipcMain.handle("sprites-saving-sprite",async (event,path,location,filename) => {
+        return await uploadSprite(path,location,filename);
+    });
     createWindow();
     BrowserWindow.getAllWindows()[0].openDevTools();
 });

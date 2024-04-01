@@ -7,6 +7,9 @@ class FileOrFolder{
         this.name = name;
         this.prefix = prefix
     }
+    fullPath(){
+        return this.prefix + "/" + this.name + (this.folderContents ? "/" : "");
+    }
     markAsFolder(){
         if(!this.folderContents){
             this.folderContents = [];
@@ -44,6 +47,9 @@ class SpritesAPI{
     root = null;
     bankPrefix = "./game-client/custom/img/";
     constructor(){
+        this.loadFileData();
+    }
+    loadFileData(){
         this.root = new FileOrFolder(this.rootName,this.rootPrefix);
         const bankFiles = fs.readdirSync(this.bankPrefix,{withFileTypes:true});
         bankFiles.forEach(f => {
@@ -75,13 +81,18 @@ class SpritesAPI{
         }
         forf.add(newFile);
     }
-    getAllSpriteData(){
+    getAllSpriteData(fresh){
+        if(fresh){
+            this.loadFileData();
+        }
         return this.root;
     }
     deleteSprite(path){
     }
     uploadSprite(file,location,name){
-
+        console.log(file + " saves to " + location + " with name " + name);
+        fs.copyFileSync(file,location+name);
+        this.loadFileData();
     }
 }
 module.exports = SpritesAPI;

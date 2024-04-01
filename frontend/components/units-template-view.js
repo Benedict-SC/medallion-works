@@ -146,8 +146,9 @@ export class UnitTemplate extends LitElement {
         newValue = newValue.replaceAll(/[^a-zA-Z0-9-]/g, '');
         newValue = newValue.toLowerCase();
     }
-    if(propertyName != "name" && parseInt(newValue)){ //yeah i know we're parsing it twice. who cares.
-        newValue = parseInt(newValue);
+    let intParse = parseInt(newValue);
+    if(propertyName != "name" && (intParse || (intParse === 0))){ 
+        newValue = intParse;
     }
     this.template[propertyName] = newValue;
     target.value = newValue;

@@ -46,7 +46,8 @@ export class UnitsPage extends LitElement {
     this.someModified = true;
   }
   saveList(){
-    console.log(this.templatesList);
+    let gs = window.gs;
+    gs.templates = this.templatesList;
     this.saving = true;
     window.medallionAPI.saveTemplatesData(this.templatesList).then(response => {
       this.saving = false;
