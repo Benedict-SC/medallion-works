@@ -38,6 +38,21 @@ export class SpritesPage extends LitElement {
       font-size:10px;
       text-align:center;
     }
+    .file-controls{
+      margin-top:-2px;
+    }
+    .file-delete-button{
+      display:block;
+      margin:auto;
+      color: darkred;
+      font-weight: bold;
+      border: none;
+      background-color: #FFF0;
+      margin-top: -3px;
+    }
+    .file-delete-button:hover{
+      text-shadow: red 0 0 4px;
+    }
   `;
   static get properties() {
     return {
@@ -79,6 +94,15 @@ export class SpritesPage extends LitElement {
     if(this.isEmbeddedSelector){
       const event = new CustomEvent("file-selected-event", { bubbles:true, composed:true, detail: file.prefix + file.name });
       this.dispatchEvent(event);
+    }
+  }
+  deleteFile(file){
+    let confirmed = confirm("Delete " + file.name + "?");
+    let filepath = file.prefix + file.name;
+    if(confirmed){
+      window.medallionAPI.deleteSprite(filepath).then(response => {
+        this.reload();
+      }).catch(err => {console.log(err);});
     }
   }
   uploadFile(){
@@ -138,6 +162,14 @@ export class SpritesPage extends LitElement {
                     }
                   </div>
                   <div class="file-label">${file.name}</div>
+                  ${ 
+                    (this.isEmbeddedSelector && (!file.folderContents)) ? html`` :
+                    html`
+                    <div class="file-controls">
+                      <button @click=${() => {this.deleteFile(file)}} class="file-delete-button">🗑</button>
+                    </div>
+                    `
+                  }
                 </div>
                 `
               })}
@@ -146,7 +178,6 @@ export class SpritesPage extends LitElement {
         <div class="file-upload-station">
               <input type="file" id="sprite-upload-button" name="sprite-upload" accept="image/png"/>
               <button @click=${this.uploadFile}>Upload here</button>
-              <button @click=${this.reload}>Test reload</button>
         </div>
       </div>
     `;

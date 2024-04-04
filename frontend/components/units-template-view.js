@@ -24,6 +24,10 @@ export class UnitTemplate extends LitElement {
         display:flex;
         align-items:flex-end;
     }
+    .template-clone-button{
+        font-size:inherit;
+        float:right;
+    }
     .template-portrait{
         width:fit-content;
         flex:1;
@@ -127,7 +131,7 @@ export class UnitTemplate extends LitElement {
 
   constructor() {
     super();
-    this.visible = true;
+    //this.visible = true;
   }
   toggle(){
     this.visible = !this.visible;
@@ -174,18 +178,25 @@ export class UnitTemplate extends LitElement {
     this.waitingProperty = propertyName;
     this.requestFilename();
   }
+  cloneMe(){
+    const event = new CustomEvent("unit-template-cloned-event", { bubbles:true, composed:true, detail: this.template });
+    this.dispatchEvent(event);
+  }
   render() {
    return html`
             <div class=${"template-box" + (this.visible ? "" : " template-hidden")}>
                 <div class="template-header">
                     <img class="template-toggle-icon" src=${this.visible ? "frontend/assets/visible-icon.png" : "frontend/assets/hidden-icon-small.png"} @click=${this.toggle}> 
                     ${
-                        (this.editId && this.visible) ? 
+                        this.visible ? this.editId ?
                         html`
                             <input type="text" .value=${this.template.templateName} @keyup=${(e) => {this.modifyProperty("templateName",e.target)}} @focusout=${() => this.toggleEdit("Id")}>
                         `:
-                        html`<span class="template-id" @click=${() => {this.toggleEdit("Id")}}>${this.template.templateName}</span>`
+                        html`<span class="template-id" @click=${() => {this.toggleEdit("Id")}}>${this.template.templateName}</span>
+                        `:
+                        html`<span class="template-id" @click=${this.toggle}>${this.template.templateName}</span>`
                     }
+                    <button class="template-clone-button" @click=${this.cloneMe}>Clone unit</button>
                 </div>
                 ${this.visible ? html`
                 <div class="template-top"> 

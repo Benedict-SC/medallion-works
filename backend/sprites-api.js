@@ -88,6 +88,8 @@ class SpritesAPI{
         return this.root;
     }
     deleteSprite(path){
+        fs.unlinkSync(path);
+        this.loadFileData();
     }
     uploadSprite(file,location,name){
         console.log(file + " saves to " + location + " with name " + name);

@@ -189,10 +189,16 @@ export class MapsPage extends LitElement {
     }
   }
   valueOfActiveCell(){
-    return this.valueOfCell(this.activeTile.x,this.activeTile.y);
+    return this.activeCell().tile;
   }
   valueOfCell(x,y){
     return this.gs.mapData.tiles[y][x].tile;
+  }
+  activeCell(){
+    if(!(this.activeTile)){
+      return null;
+    }
+    return this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x];
   }
   getImagePathFromCellCode(code){
     let index = (code > 1000) ? (code-1001) : (code - 1);
@@ -211,6 +217,12 @@ export class MapsPage extends LitElement {
     let selector = this.renderRoot.querySelector("#terrain");
     this.gs.mapData.tiles[this.activeTile.y][this.activeTile.x].tile = parseInt(selector.value);
     this.requestUpdate();
+  }
+  updateStartingPosition(){
+    let selector = this.renderRoot.querySelector("input[name='starting-select']:checked");
+    let isStarting = selector.value == "true";
+    this.activeCell().isStartingPosition = isStarting;
+    this.refreshMap();
   }
   paintCell(x,y){
     let selector = this.renderRoot.querySelector("input[name='paintbrush-select']:checked");
@@ -416,6 +428,13 @@ export class MapsPage extends LitElement {
                         })}
                       </select>
                     </div>
+                    <div class="start-position-selector">
+                        Player starting position:<br/>
+                        <label for="startYes">Yes</label>
+                        <input type="radio" name="starting-select" id="startYes" value=true @change=${this.updateStartingPosition}>
+                        <label for="startNo">No</label>
+                        <input type="radio" name="starting-select" id="startNo" value=false @change=${this.updateStartingPosition}>
+                    </div>
                   `
                 : html`<p>No tile selected.</p>`
               }
@@ -453,6 +472,14 @@ export class MapsPage extends LitElement {
   updated(){
     if(this.maplist.length == 0){
       window.medallionAPI.getMapsList().then(result => this.maplist = result);
+    }
+    let activeCell = this.activeCell();
+    if(activeCell){
+      if(activeCell.isStartingPosition){
+        this.renderRoot.querySelector("#startYes").checked = true;
+      }else{
+        this.renderRoot.querySelector("#startNo").checked = true;
+      }
     }
   }
 }

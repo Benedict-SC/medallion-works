@@ -30,9 +30,12 @@ async function getSpriteGallery(){
 async function uploadSprite(path,location,filename){
     return sprites.uploadSprite(path,location,filename);
 }
+async function deleteSprite(path){
+    return sprites.deleteSprite(path);
+}
 const createWindow = function(){
     const win = new BrowserWindow({
-        width:1400,height:720,
+        width:1400,height:800,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
         },
@@ -64,6 +67,9 @@ app.whenReady().then(() => {
     });
     ipcMain.handle("sprites-saving-sprite",async (event,path,location,filename) => {
         return await uploadSprite(path,location,filename);
+    });
+    ipcMain.handle("sprites-deleting-sprite",async (event,path) => {
+        return await deleteSprite(path);
     });
     createWindow();
     BrowserWindow.getAllWindows()[0].openDevTools();

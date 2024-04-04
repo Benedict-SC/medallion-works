@@ -99,7 +99,7 @@ export class MapsUnitView extends LitElement{
     unit.res = template.res;
     unit.mov = template.mov;
     unit.con = template.con;
-    for(let i = 0; i < level; i++){
+    for(let i = 0; i < level-1; i++){ //minus one because level 1 is base
         //TODO: implement >100% growths by doing these in loops. ugh.
         let strRNG = Math.random() * 100;
         if(strRNG <= template.strg){ unit.str += 1; }

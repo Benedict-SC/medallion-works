@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('medallionAPI', {
   getTemplatesData: (filename) => ipcRenderer.invoke('maps-wants-templates-data',filename),
   saveTemplatesData: (data) => ipcRenderer.invoke('units-saving-templates-data',data),
   getSpriteGallery: () => ipcRenderer.invoke('sprites-wants-file-data'),
-  uploadSprite: (path,location,filename) => ipcRenderer.invoke('sprites-saving-sprite',path,location,filename)
+  uploadSprite: (path,location,filename) => ipcRenderer.invoke('sprites-saving-sprite',path,location,filename),
+  deleteSprite: (path) => ipcRenderer.invoke('sprites-deleting-sprite',path)
 });
