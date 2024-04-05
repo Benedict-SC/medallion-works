@@ -27,12 +27,20 @@ export class MapsPage extends LitElement {
     .toolbar-button{
       background-color:#888888;
       padding:3px;
+      padding-left:5px;
+      padding-right:5px;
+    }
+    .toolbar-not-a-state{
+      float:right;
+      color:#ebebeb;
+      font-weight:bold;
+      margin-right:10px;
     }
     .toolbar-selected{
       background-color: #666666;
     }
     .map-row {
-      margin-bottom:-7px;
+      line-height:0px;
       width:fit-content;
       white-space:nowrap;
     }
@@ -48,6 +56,7 @@ export class MapsPage extends LitElement {
     .tile-detail{
       flex:1;
       border: 2px solid #666666;
+      padding:3px;
     }
     .terrain-detail{
       background-color: white;
@@ -61,8 +70,9 @@ export class MapsPage extends LitElement {
     }
     .unit-img{
       position:absolute;
-      left:-2px;
-      top:-1px;
+      bottom: 0px;
+      left: 50%;
+      transform: translate(-50%,0);
     }
     .ghost-unit{
       position:absolute;
@@ -101,6 +111,7 @@ export class MapsPage extends LitElement {
   static get properties() {
     return {
       gs: {type:Object},
+      mutex: {type:Boolean},
       maplist: {type:Array},
       currentMapName: {type:String},
       activeTile: {type:Object},
@@ -108,7 +119,8 @@ export class MapsPage extends LitElement {
       movingSourceCell: {type:Object},
       movingHoversOver: {type:Object},
       selectedTool: {type:String}, //select, paint, move
-      paintingTileID: {type:Number}
+      paintingTileID: {type:Number},
+      decorationView: {type:Boolean}
     };
   }
 
@@ -131,6 +143,7 @@ export class MapsPage extends LitElement {
       this.gs.nativeTerrain = result.native;
       this.gs.customTerrain = result.custom;
     });
+    this.addEventListener('back-from-props',() => {this.decorationView = false});
   }
   refreshMap(){
     this.requestUpdate();
@@ -138,9 +151,11 @@ export class MapsPage extends LitElement {
   getMapData(){
     let selector = this.renderRoot.querySelector("#map-selector");
     let mapfile = selector.value;
-    this.currentMapName = mapfile;
     window.medallionAPI.getMapData(mapfile).then(data => {
       this.gs.mapData = data;
+      if(!this.gs.mapData.props){
+        this.gs.mapData.props = [];
+      }
       this.gs.units = [];
       this.activeTile = {x:0,y:0};
       let height = data.tiles.length;
@@ -162,6 +177,7 @@ export class MapsPage extends LitElement {
       for(let unit of this.gs.mapData.units){
         this.gs.units[unit.y-1][unit.x-1] = unit;
       }
+      this.currentMapName = mapfile;
       this.requestUpdate();
     });
   }
@@ -177,6 +193,9 @@ export class MapsPage extends LitElement {
           flattenedUnits.push(unit);
         }
       }
+    }
+    if(!this.gs.mapData.props){
+      this.gs.mapData.props = [];
     }
     this.gs.mapData.units = flattenedUnits;
     window.medallionAPI.saveMapData(this.gs.mapData,this.currentMapName).then(response => {
@@ -252,6 +271,7 @@ export class MapsPage extends LitElement {
     selector = this.renderRoot.querySelector("#newmap-height");
     let h = selector.value;
     this.gs.mapData = {tiles:[]}
+    this.gs.mapData.props = [];
     this.gs.units = [];
     for(let i = 0; i < h; i++){
       let row = [];
@@ -284,6 +304,9 @@ export class MapsPage extends LitElement {
   selectPaintbrush(){
     let selector = this.renderRoot.querySelector("#terrain");
     this.paintingTileID = parseInt(selector.value);
+  }
+  toggleDecorationView(){
+    this.decorationView = !this.decorationView;
   }
   mousedown(x,y){
     if(this.selectedTool == "paint"){
@@ -384,12 +407,14 @@ export class MapsPage extends LitElement {
         <div>
           Or create a new map: <input id="newmap-width" type="number" value="1" min="1" max="60"/> wide by <input id="newmap-height" type="number" value="1" min="1" max="60"/> tall, save to <input id="newmap-filepath" class="newmap-filename-input" type="text" maxlength="32" @keyup=${this.validateMapFilename}>.json <button @click=${this.createNewMap}>Create</button>
         </div>
+        ${ !(this.decorationView) ? html`
         <div class="map-ui">
           <div class="map-grid">
             <div class="map-toolbar">
               <button class=${this.toolSelectionClass("select")} @click=${(e) => {this.selectTool("select");}}><img src="frontend/assets/select-icon.png"/></button>
               <button class=${this.toolSelectionClass("paint")} @click=${(e) => {this.selectTool("paint");}}><img src="frontend/assets/paint-icon.png"/></button>  
-              <button class=${this.toolSelectionClass("move")} @click=${(e) => {this.selectTool("move");}}><img src="frontend/assets/move-icon.png"/></button>             
+              <button class=${this.toolSelectionClass("move")} @click=${(e) => {this.selectTool("move");}}><img src="frontend/assets/move-icon.png"/></button>
+              <button class="toolbar-button toolbar-not-a-state" @click=${this.toggleDecorationView}>Decorate map</button>             
             </div>
             ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
@@ -464,6 +489,8 @@ export class MapsPage extends LitElement {
           }            
           </div>
         </div>
+        `:html`<maps-props-view .props=${this.gs.mapData.props} currentMapName=${this.currentMapName} tileSize=50></maps-props-view>`}
+
         <button @click=${this.saveMapData}>Press to save map data</button>
         <p>${JSON.stringify(this.gs.mapData)}</p>
       </div>
@@ -473,12 +500,14 @@ export class MapsPage extends LitElement {
     if(this.maplist.length == 0){
       window.medallionAPI.getMapsList().then(result => this.maplist = result);
     }
-    let activeCell = this.activeCell();
-    if(activeCell){
-      if(activeCell.isStartingPosition){
-        this.renderRoot.querySelector("#startYes").checked = true;
-      }else{
-        this.renderRoot.querySelector("#startNo").checked = true;
+    if(!this.decorationView && this.selectedTool == "select"){
+      let activeCell = this.activeCell();
+      if(activeCell){
+        if(activeCell.isStartingPosition){
+          this.renderRoot.querySelector("#startYes").checked = true;
+        }else{
+          this.renderRoot.querySelector("#startNo").checked = true;
+        }
       }
     }
   }

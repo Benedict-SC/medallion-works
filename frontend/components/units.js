@@ -46,7 +46,7 @@ export class UnitsPage extends LitElement {
       this.templatesList = list;
     });
     this.addEventListener('unit-template-modified-event', this.handleMutate);
-    this.addEventListener('unit-template-cloned-event',this.handleClone)
+    this.addEventListener('unit-template-cloned-event',this.handleClone);
   }
   handleMutate(){
     this.someModified = true;

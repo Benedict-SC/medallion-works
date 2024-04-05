@@ -27,6 +27,7 @@ export class MapsUnitView extends LitElement{
       background-color: white;
       border: 1px solid #BBBBBB;
       margin:2px;
+      padding:3px;
     }
     .faction-toggles-box{
         font-size:8px;
