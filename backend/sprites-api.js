@@ -58,10 +58,10 @@ class SpritesAPI{
     }
     populateFilePaths(dirent,prefix=""){
         if(dirent.isFile()){
-            console.log("img file found: " + prefix + dirent.name);
+            //console.log("img file found: " + prefix + dirent.name);
             this.imgFilenames.push(prefix + dirent.name);
         }else if(dirent.isDirectory()){
-            console.log("img folder found: " + prefix + dirent.name);
+            //console.log("img folder found: " + prefix + dirent.name);
             let newprefix = prefix + dirent.name + "/";
             const imgFiles = fs.readdirSync(this.bankPrefix + newprefix,{withFileTypes:true});
             imgFiles.forEach(f => {

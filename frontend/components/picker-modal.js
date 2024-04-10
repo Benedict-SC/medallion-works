@@ -47,7 +47,7 @@ export class PickerModal extends LitElement {
     this.active = false;
   }
   dismissWithoutSelecting(){
-    console.log("dismissing");
+    //console.log("dismissing");
     //fake an empty event to get rid of the once listener
     const event = new CustomEvent("file-selected-event", { bubbles:true, composed:true });
     this.dispatchEvent(event);

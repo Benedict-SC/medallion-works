@@ -140,7 +140,6 @@ export class MapsUnitView extends LitElement{
     this.otherSelected = selector.checked;
   }
   updateUnitFaction(){
-    console.log("we're updating the faction");
     this.toggleOtherBox();
     let unit = window.gs.units[this.y][this.x];
     

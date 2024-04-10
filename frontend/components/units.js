@@ -80,7 +80,6 @@ export class UnitsPage extends LitElement {
       foundMatch = this.templatesList.find(x => {
         return x.templateName == template.templateName;
       });
-      console.log(foundMatch);
     } 
   }
   createBlankTemplate(){

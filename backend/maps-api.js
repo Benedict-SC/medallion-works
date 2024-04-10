@@ -49,10 +49,10 @@ class MapsAPI{
     }
     populateMapPaths(dirent,prefix=""){
         if(dirent.isFile()){
-            console.log("file found: " + prefix + dirent.name);
+            //console.log("file found: " + prefix + dirent.name);
             this.mapFilenames.push(prefix + dirent.name);
         }else if(dirent.isDirectory()){
-            console.log("folder found: " + prefix + dirent.name);
+            //console.log("folder found: " + prefix + dirent.name);
             let newprefix = prefix + dirent.name + "/";
             const mapsFiles = fs.readdirSync(this.mapsFolderPath + newprefix,{withFileTypes:true});
             mapsFiles.forEach(f => {
