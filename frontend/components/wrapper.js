@@ -43,6 +43,8 @@ export class AppWrapper extends LitElement {
       return html`<units-page></units-page>`;
     }else if(this.view == "Maps"){
       return html`<maps-page></maps-page>`;
+    }else if(this.view == "Weapons"){
+      return html`<weapons-page></weapons-page>`;
     }else if(this.view == "Sprites"){
       return html`<sprites-page></sprites-page>`;
     }else{
@@ -65,6 +67,7 @@ export class AppWrapper extends LitElement {
         <div class="navbar">
           <mw-nav-item target="Maps" text="Edit Maps"></mw-nav-item>
           <mw-nav-item target="Units" text="Edit Units"></mw-nav-item>
+          <mw-nav-item target="Weapons" text="Edit Weapons"></mw-nav-item>
           <mw-nav-item target="Sprites" text="Sprite Bank"></mw-nav-item>
         </div>
         <div>

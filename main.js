@@ -6,33 +6,6 @@ const SpritesAPI = require('./backend/sprites-api');
 const maps = new MapsAPI();
 const templates = new TemplatesAPI();
 const sprites = new SpritesAPI();
-async function retrieveMapData(filename){
-    return maps.getMapData(filename);
-}
-async function getMapsList(){
-    return maps.mapFilenames;
-}
-async function saveMapData(data,filename){
-    return maps.saveMapData(data,filename);
-}
-async function retrieveTerrainData(){
-    return maps.getTerrainData();
-}
-async function retrieveTemplatesData(){
-    return templates.getTemplatesData();
-}
-async function saveTemplatesData(data){
-    return templates.saveTemplatesData(data);
-}
-async function getSpriteGallery(){
-    return sprites.getAllSpriteData();
-}
-async function uploadSprite(path,location,filename){
-    return sprites.uploadSprite(path,location,filename);
-}
-async function deleteSprite(path){
-    return sprites.deleteSprite(path);
-}
 const createWindow = function(){
     const win = new BrowserWindow({
         width:1400,height:800,
@@ -45,31 +18,37 @@ const createWindow = function(){
 }
 app.whenReady().then(() => {
     ipcMain.handle("maps-wants-maps-list",async (event) => {
-        return await getMapsList();
+        return maps.mapFilenames;
     });
     ipcMain.handle("maps-wants-maps-data",async (event,filename) => {
-        return await retrieveMapData(filename);
+        return await maps.getMapData(filename);
     });
     ipcMain.handle("maps-saving-map-data",async (event,data,filename) => {
-        return await saveMapData(data,filename);
+        return await maps.saveMapData(data,filename);
     });
     ipcMain.handle("maps-wants-terrain-data",async (event) => {
-        return await retrieveTerrainData();
+        return await maps.getTerrainData();
     });
     ipcMain.handle("maps-wants-templates-data",async (event) => {
-        return await retrieveTemplatesData();
+        return await templates.getTemplatesData();
     });
     ipcMain.handle("units-saving-templates-data",async (event,data) => {
-        return await saveTemplatesData(data);
+        return await templates.saveTemplatesData(data);
     });
     ipcMain.handle("sprites-wants-file-data",async (event) => {
-        return await getSpriteGallery();
+        return sprites.getAllSpriteData();
     });
     ipcMain.handle("sprites-saving-sprite",async (event,path,location,filename) => {
-        return await uploadSprite(path,location,filename);
+        return sprites.uploadSprite(path,location,filename);
     });
     ipcMain.handle("sprites-deleting-sprite",async (event,path) => {
-        return await deleteSprite(path);
+        return sprites.deleteSprite(path);
+    });
+    ipcMain.handle("something-wants-weapon-data",async (event) =>{
+        return await templates.getWeaponsData();
+    });
+    ipcMain.handle("weapons-saving-weapon-data",async (event,data) =>{
+        return await templates.saveWeaponsData(data);
     });
     createWindow();
     BrowserWindow.getAllWindows()[0].openDevTools();

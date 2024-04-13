@@ -9,5 +9,7 @@ contextBridge.exposeInMainWorld('medallionAPI', {
   saveTemplatesData: (data) => ipcRenderer.invoke('units-saving-templates-data',data),
   getSpriteGallery: () => ipcRenderer.invoke('sprites-wants-file-data'),
   uploadSprite: (path,location,filename) => ipcRenderer.invoke('sprites-saving-sprite',path,location,filename),
-  deleteSprite: (path) => ipcRenderer.invoke('sprites-deleting-sprite',path)
+  deleteSprite: (path) => ipcRenderer.invoke('sprites-deleting-sprite',path),
+  getWeaponsData: () => ipcRenderer.invoke('something-wants-weapon-data'),
+  saveWeaponsData: (data) => ipcRenderer.invoke('weapons-saving-weapon-data',data)
 });
