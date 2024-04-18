@@ -1,9 +1,9 @@
 const fs = require("fs");
 class TemplatesAPI{
     templatesPath = "./game-client/custom/units/templates.json"
-    weaponsPath = "./game-client/custom/weapons.json"
+    itemsPath = "./game-client/custom/items.json"
     loadedTemplates = null;
-    loadedWeapons = null;
+    loadedItems = null;
     constructor(){
     }
     getTemplatesData(){
@@ -23,18 +23,18 @@ class TemplatesAPI{
             return e;
         }
     }
-    getWeaponsData(){
-        if(!this.loadedWeapons){
-            let weaponsFileBuffer = fs.readFileSync(this.weaponsPath);
-            this.loadedWeapons = JSON.parse(weaponsFileBuffer.toString());
+    getItemsData(){
+        if(!this.loadedItems){
+            let itemsFileBuffer = fs.readFileSync(this.itemsPath);
+            this.loadedItems = JSON.parse(itemsFileBuffer.toString());
         }
-        return this.loadedWeapons;
+        return this.loadedItems;
     }
-    saveWeaponsData(weaponsArray){
-        this.loadedWeapons = weaponsArray;
-        let weaponsData = JSON.stringify(weaponsArray);
+    saveItemsData(itemsArray){
+        this.loadedItems = itemsArray;
+        let itemsData = JSON.stringify(itemsArray);
         try{
-            fs.writeFileSync(this.weaponsPath,weaponsData);
+            fs.writeFileSync(this.itemsPath,itemsData);
             return "success";
         }catch(e){
             return e;

@@ -44,11 +44,11 @@ app.whenReady().then(() => {
     ipcMain.handle("sprites-deleting-sprite",async (event,path) => {
         return sprites.deleteSprite(path);
     });
-    ipcMain.handle("something-wants-weapon-data",async (event) =>{
-        return await templates.getWeaponsData();
+    ipcMain.handle("something-wants-item-data",async (event) =>{
+        return await templates.getItemsData();
     });
-    ipcMain.handle("weapons-saving-weapon-data",async (event,data) =>{
-        return await templates.saveWeaponsData(data);
+    ipcMain.handle("items-saving-item-data",async (event,data) =>{
+        return await templates.saveItemsData(data);
     });
     createWindow();
     BrowserWindow.getAllWindows()[0].openDevTools();
