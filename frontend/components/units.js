@@ -3,9 +3,6 @@ import { UnitTemplateData } from '../objects/unit-template.js';
 
 export class UnitsPage extends LitElement {
   static styles = css`
-    .navbar {
-      background-color:rgb(240, 240, 240);
-    }
     .templates-browser{
       display:flex;
     }

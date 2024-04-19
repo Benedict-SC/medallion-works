@@ -22,6 +22,8 @@ export class UnitTemplateData{
             this.lukg = templateObj.lukg;
             this.defg = templateObj.defg;
             this.resg = templateObj.resg;
+            this.presetWeapons = templateObj.presetWeapons ? [...templateObj.presetWeapons] : [];
+            this.presetItems = templateObj.presetItems ? [...templateObj.presetItems] : [];
         }else{
             this.templateName = "inserttemplatenamehere";
             this.mapSpriteFile = "assets/img/qmark.png";
@@ -44,9 +46,11 @@ export class UnitTemplateData{
             this.lukg = 20;
             this.defg = 20;
             this.resg = 20;
+            this.presetWeapons = [];
+            this.presetItems = [];
         }
     }
     getCopy(){
-        return new UnitTemplate(this);
+        return new UnitTemplateData(this);
     }
 }

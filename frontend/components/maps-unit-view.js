@@ -123,6 +123,8 @@ export class MapsUnitView extends LitElement{
     unit.faction = faction;
     unit.name = template.name;
     unit.level = level;
+    unit.weapons = [];
+    unit.items = [];
     gs.units[this.y][this.x] = unit;
     gs.mapsComponent.refreshMap();
     this.createState = "NONE";

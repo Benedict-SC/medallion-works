@@ -73,7 +73,8 @@ export class AppWrapper extends LitElement {
         <div>
           ${this.getView()}
         </div>
-        <picker-modal class="picker"></picker-modal>
+        <picker-modal class="picker" modalType="sprite"></picker-modal>
+        <picker-modal class="picker" modalType="item"></picker-modal>
       </div>
     `;
   }

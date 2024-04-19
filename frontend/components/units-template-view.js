@@ -1,4 +1,4 @@
-import {LitElement, html, css} from '../../lit-core.min.js';
+import {LitElement, html, css, repeat} from '../../lit-all.min.js';
 
 export class UnitTemplate extends LitElement {
   static styles = css`
@@ -86,6 +86,7 @@ export class UnitTemplate extends LitElement {
     }
     .template-inventory{
         flex:1;
+        margin:2px;
     }
     .template-stats-columns{
         display:flex;
@@ -101,6 +102,18 @@ export class UnitTemplate extends LitElement {
     }
     .template-stat-editor{
         max-width:32px;
+    }
+    .template-inventory-column{
+        padding:4px;
+        padding-bottom:2px;
+        padding-top:2px;
+        background-color:#DDDDE8;
+        border:1px solid #888;
+        border-radius:7px;
+    }
+    hr{
+        margin-top:3px;
+        margin-bottom:3px;
     }
   `;
   static get properties() {
@@ -177,6 +190,20 @@ export class UnitTemplate extends LitElement {
   modifyFilenameProperty(propertyName){
     this.waitingProperty = propertyName;
     this.requestFilename();
+  }
+  addInventoryItem(weapon){
+    let eventType = weapon ? "weapon" : "item"
+    const event = new CustomEvent("request-inventory-" + eventType, { bubbles:true, composed:true, detail: this });
+    this.dispatchEvent(event);
+  }
+  receiveItemData(item){
+    if(item.wtype == "ITEM"){
+        this.template.presetItems.push(item.id);
+    }else{
+        this.template.presetWeapons.push(item.id);
+    }
+    this.markUpdate();
+    this.requestUpdate();
   }
   cloneMe(){
     const event = new CustomEvent("unit-template-cloned-event", { bubbles:true, composed:true, detail: this.template });
@@ -337,6 +364,25 @@ export class UnitTemplate extends LitElement {
                     <div class="template-inventory">
                         <div class="template-body-header">
                             Inventory:
+                        </div>
+                        <div class="template-inventory-column">
+                            ${repeat(this.template.presetWeapons,(wep) => wep, (wep,idx) => {
+                                return html`
+                                    <div class="template-item-row">
+                                    ${wep}
+                                    </div>
+                                `
+                            })}
+                            <button class="template-new-weapon-button" @click=${() => this.addInventoryItem(true)}>+ Add weapon</button>
+                            <hr/>
+                            ${repeat(this.template.presetItems,(item) => item, (item,idx) => {
+                                return html`
+                                    <div class="template-item-row">
+                                    ${item}
+                                    </div>
+                                `
+                            })}
+                            <button class="template-new-weapon-button" @click=${() => this.addInventoryItem(false)}>+ Add item</button>
                         </div>
                     </div>
                 </div>

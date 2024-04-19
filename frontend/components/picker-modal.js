@@ -26,12 +26,23 @@ export class PickerModal extends LitElement {
   static get properties() {
     return {
       active: {type:Boolean},
-      waitingComponent: {type:Object}
+      waitingComponent: {type:Object},
+      modalType: {type:String},
+      itemCategory: {type:String}
     };
   }
   constructor() {
     super();
-    window.addEventListener("request-sprite-filename",(e) => this.handleSpriteRequest(e));
+    this.itemCategory = "SWORD";
+  }
+  firstUpdated(){
+    super.firstUpdated();
+    if(this.modalType == "sprite"){
+      window.addEventListener("request-sprite-filename",(e) => this.handleSpriteRequest(e));
+    }else if(this.modalType == "item"){
+      window.addEventListener("request-inventory-item",(e) => this.handleItemRequest(e,"ITEM"));
+      window.addEventListener("request-inventory-weapon",(e) => this.handleItemRequest(e,"SWORD"));
+    }
   }
   handleSpriteRequest(event){
     this.active = true;
@@ -46,10 +57,25 @@ export class PickerModal extends LitElement {
     this.waitingComponent.receiveFilename(value);
     this.active = false;
   }
+  handleItemRequest(event,type){
+    this.active = true;
+    this.itemCategory = type;
+    this.waitingComponent = event.detail;
+    this.addEventListener("item-selected-event", (e) => this.completeItemRequest(e), {once:true});
+  }
+  completeItemRequest(event){
+    let value = event.detail;
+    this.waitingComponent.receiveItemData(value);
+    this.active = false;
+  }
   dismissWithoutSelecting(){
-    //console.log("dismissing");
+    let event;
     //fake an empty event to get rid of the once listener
-    const event = new CustomEvent("file-selected-event", { bubbles:true, composed:true });
+    if(this.modalType == "sprite"){
+      event = new CustomEvent("file-selected-event", { bubbles:true, composed:true });
+    }else if(this.modalType == "item"){
+      event = new CustomEvent("item-selected-event", { bubbles:true, composed:true });
+    }
     this.dispatchEvent(event);
     this.active = false;
   }
@@ -59,7 +85,12 @@ export class PickerModal extends LitElement {
             <div class="picker-modal-overlay">
                 <div class="picker-modal-container">
                     <button class="picker-dismiss-button" @click=${this.dismissWithoutSelecting}>X</button>
-                    <sprites-page isEmbeddedSelector=true></sprites-page>
+                    ${ this.modalType == "sprite" ? 
+                      html`<sprites-page isEmbeddedSelector=true></sprites-page>` 
+                      : this.modalType == "item" ? 
+                      html`<items-page isEmbeddedSelector=true currentCategory=${this.itemCategory}></items-page>`
+                      : html``
+                    }
                 </div>
             </div>
         `

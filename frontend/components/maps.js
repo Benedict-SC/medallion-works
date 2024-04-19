@@ -2,9 +2,6 @@ import {LitElement, staticHtml, html, literal, css} from '../../lit-all.min.js';
 
 export class MapsPage extends LitElement {
   static styles = css`
-    .navbar {
-      background-color:rgb(240, 240, 240);
-    }
     .newmap-filename-input{
       text-align:right;
     }

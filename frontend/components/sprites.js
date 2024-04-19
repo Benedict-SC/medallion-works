@@ -2,9 +2,6 @@ import {LitElement, html, css} from '../../lit-core.min.js';
 
 export class SpritesPage extends LitElement {
   static styles = css`
-    .navbar {
-      background-color:rgb(240, 240, 240);
-    }
     .file-browser{
       overflow:scroll;
     }
@@ -144,6 +141,9 @@ export class SpritesPage extends LitElement {
                             <img class="file-img" @dblclick=${this.backUp} src="./frontend/assets/parentfolder.png">
                         </div>
                         <div class="file-label">&nbsp;</div>
+                        <div class="file-controls">
+                          <button class="file-delete-button">&nbsp;</button>
+                        </div>
                     </div>`
                   : html``
               }
@@ -163,7 +163,10 @@ export class SpritesPage extends LitElement {
                   </div>
                   <div class="file-label">${file.name}</div>
                   ${ 
-                    (this.isEmbeddedSelector && (!file.folderContents)) ? html`` :
+                    (this.isEmbeddedSelector || file.folderContents) ? html`
+                    <div class="file-controls">
+                      <button class="file-delete-button">&nbsp;</button>
+                    </div>` :
                     html`
                     <div class="file-controls">
                       <button @click=${() => {this.deleteFile(file)}} class="file-delete-button">🗑</button>
