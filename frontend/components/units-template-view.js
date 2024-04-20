@@ -197,6 +197,9 @@ export class UnitTemplate extends LitElement {
     this.dispatchEvent(event);
   }
   receiveItemData(item){
+    if(!item){
+        return;
+    }
     if(item.wtype == "ITEM"){
         this.template.presetItems.push(item.id);
     }else{

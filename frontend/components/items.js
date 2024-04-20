@@ -6,11 +6,15 @@ export class ItemsPage extends LitElement {
     .items-header{
       position:relative;
     }
+    .header-width-control{
+      width:fit-content;
+    }
     .items-header-text{
       font-size:20px;
       font-weight:bold;
       padding:5px;
       color:rgb(45, 102, 132);
+      width:fit-content;
     }
     .items-header-save{
       position:absolute;
@@ -157,7 +161,6 @@ export class ItemsPage extends LitElement {
   modifyProperty(eventTarget,item,propertyName){
     let originalValue = item[propertyName];
     let value = eventTarget.value;
-    console.log("new value is " + value);
     let isNumber = eventTarget.type == "number";
     if(isNumber){
       value = parseInt(value);
@@ -172,11 +175,11 @@ export class ItemsPage extends LitElement {
     return (this.categories && this.categories[this.currentCategory]) ? 
     html`
       <div class="wep-window">
-        <div class="items-header">
+        <div class="${"items-header" + (this.isEmbeddedSelector ? " header-width-control" : "")}">
           <div class="items-header-text">Weapons and Items</div>
           <div class="items-header-save">
             ${this.someModified ? html`<span class="items-header-save-notice">You have unsaved changes to weapons and items!</span>` : html``}
-            <button ?disabled=${!this.someModified} @click=${this.saveList}>Save weapons and items</button>
+            ${this.isEmbeddedSelector ? html`` : html`<button ?disabled=${!this.someModified} @click=${this.saveList}>Save weapons and items</button>`}
           </div>
         </div>
         <div class="items-tabs">
