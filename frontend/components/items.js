@@ -191,7 +191,8 @@ export class ItemsPage extends LitElement {
             `
           })}
         </div>
-        ${repeat(this.categories[this.currentCategory],(wep) => wep, (wep,idx) => {
+        <div class="items-list">
+          ${repeat(this.categories[this.currentCategory],(wep) => wep, (wep,idx) => {
             return html`
               <div class=${"item-box" + (this.isEmbeddedSelector ? " clickable-item" : "")} @dblclick=${() => this.selectItem(wep)}>
                   <div class="item-title-line">
@@ -244,9 +245,12 @@ export class ItemsPage extends LitElement {
                       </select>`
                     }
                   </div>
-              </div>
-            `
-        })}
+              </div>`
+          })}
+          ${this.isEmbeddedSelector ? html`` :
+            html`<button @click=${this.addNewItem}>+ New item</button>`
+          }
+        </div>
       </div>
     `
     :html`Loading ${this.currentCategory}S...`
