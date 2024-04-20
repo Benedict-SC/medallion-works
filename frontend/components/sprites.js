@@ -67,6 +67,12 @@ export class SpritesPage extends LitElement {
       this.folder = data;
     });
   }
+  firstUpdated(){
+    super.firstUpdated();
+    if(!this.isEmbeddedSelector){
+      window.gs.activePage = this;
+    }
+  }
   reload(){
     let currentPrefix = this.folder.prefix;
     let currentName = this.folder.name;

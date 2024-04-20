@@ -45,6 +45,10 @@ export class UnitsPage extends LitElement {
     this.addEventListener('unit-template-modified-event', this.handleMutate);
     this.addEventListener('unit-template-cloned-event',this.handleClone);
   }
+  firstUpdated(){
+    super.firstUpdated();
+    window.gs.activePage = this;
+  }
   handleMutate(){
     this.someModified = true;
   }

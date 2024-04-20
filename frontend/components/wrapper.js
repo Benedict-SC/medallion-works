@@ -34,7 +34,18 @@ export class AppWrapper extends LitElement {
     this.addEventListener('mw-nav-event', (e) => this.changeView(e.detail.view));
   }
   changeView(view){
-    this.view = view;
+    if(window.gs.activePage){
+      if(window.gs.activePage.someModified){//check for unsaved changes before navigating
+        let ok = confirm("There are unsaved changes in this view! Discard changes?");
+        if(ok){
+          this.view = view;
+        }
+      }else{
+        this.view = view;
+      }
+    }else{
+      this.view = view;
+    }
   }
   getView(){
     if(this.view == "Home"){

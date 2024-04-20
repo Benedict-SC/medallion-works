@@ -3,14 +3,26 @@ import { ItemTemplate } from '../objects/item-template.js';
 
 export class ItemsPage extends LitElement {
   static styles = css`
-    .navbar {
-      background-color:rgb(240, 240, 240);
-    }
     .items-header{
+      position:relative;
+    }
+    .items-header-text{
       font-size:20px;
       font-weight:bold;
       padding:5px;
       color:rgb(45, 102, 132);
+    }
+    .items-header-save{
+      position:absolute;
+      right:0px;
+      top:8px;
+    }
+    .items-header-save-button{
+
+    }
+    .items-header-save-notice{
+      color:red;
+      font-size:12px;
     }
     .items-tabs{
       display:flex;
@@ -29,6 +41,10 @@ export class ItemsPage extends LitElement {
       background-color:white;
       border-bottom:none;
     }
+    .clickable-item:hover{
+      background-color:#DDE8F2;
+      cursor:pointer;
+    }
     .item-box{
       padding:2px;
       border-radius:5px;
@@ -37,6 +53,13 @@ export class ItemsPage extends LitElement {
     }
     .item-name{
       font-weight:bold;
+    }
+    .item-field-input{
+      width:40px;
+      margin-right:8px;
+    }
+    .item-field-fixed{
+      margin-right:8px;
     }
   `;
   static get properties() {
@@ -62,6 +85,12 @@ export class ItemsPage extends LitElement {
       window.gs.items = data;
       this.processItems();
     });
+  }
+  firstUpdated(){
+    super.firstUpdated();
+    if(!this.isEmbeddedSelector){
+      window.gs.activePage = this;
+    }
   }
   saveList(){
     let gs = window.gs;
@@ -125,11 +154,31 @@ export class ItemsPage extends LitElement {
       this.dispatchEvent(event);
     }
   }
+  modifyProperty(eventTarget,item,propertyName){
+    let originalValue = item[propertyName];
+    let value = eventTarget.value;
+    console.log("new value is " + value);
+    let isNumber = eventTarget.type == "number";
+    if(isNumber){
+      value = parseInt(value);
+    }
+    if(originalValue != value){
+      this.someModified = true;
+    }
+    item[propertyName] = value;
+    this.requestUpdate();
+  }
   render() {
     return (this.categories && this.categories[this.currentCategory]) ? 
     html`
       <div class="wep-window">
-        <div class="items-header">Weapons and Items</div>
+        <div class="items-header">
+          <div class="items-header-text">Weapons and Items</div>
+          <div class="items-header-save">
+            ${this.someModified ? html`<span class="items-header-save-notice">You have unsaved changes to weapons and items!</span>` : html``}
+            <button ?disabled=${!this.someModified} @click=${this.saveList}>Save weapons and items</button>
+          </div>
+        </div>
         <div class="items-tabs">
           ${repeat(this.categoryList,(cat) => cat,(cat,idx) => {
             return html`
@@ -141,8 +190,57 @@ export class ItemsPage extends LitElement {
         </div>
         ${repeat(this.categories[this.currentCategory],(wep) => wep, (wep,idx) => {
             return html`
-              <div class="item-box" @dblclick=${() => this.selectItem(wep)}>
-                  <img src=${"./game-client/" + wep.iconfile}></img> <span class="item-name">${wep.name}</span> (${wep.maxUses}/${wep.maxUses})
+              <div class=${"item-box" + (this.isEmbeddedSelector ? " clickable-item" : "")} @dblclick=${() => this.selectItem(wep)}>
+                  <div class="item-title-line">
+                    <img src=${"./game-client/" + wep.iconfile}></img> 
+                    <span class="item-name">${wep.name}</span>
+                    ${wep.maxUses > 0 ? html`<span> (${wep.maxUses}/${wep.maxUses})</span>` : html``}
+                  </div>
+                  <div class="item-property-controls">
+                    <span class="item-field-label">Uses: </span>
+                    ${this.isEmbeddedSelector ? 
+                      html`<span class="item-field-fixed">${wep.maxUses}</span>`
+                      : html`<input class="item-field-input" type="number" min="0" .value=${wep.maxUses} @change=${(e) => this.modifyProperty(e.target,wep,"maxUses")} 
+                      }/>`
+                    }
+                    <span class="item-field-label">Might: </span>
+                    ${this.isEmbeddedSelector ? 
+                      html`<span class="item-field-fixed">${wep.might}</span>`
+                      : html`<input class="item-field-input" type="number" .value=${wep.might} @change=${(e) => this.modifyProperty(e.target,wep,"might")}/>`
+                    } 
+                    
+                    <span class="item-field-label">Hit: </span>
+                    ${this.isEmbeddedSelector ? 
+                      html`<span class="item-field-fixed">${wep.hit}</span>`
+                      : html`<input class="item-field-input" type="number" min="0" .value=${wep.hit} @change=${(e) => this.modifyProperty(e.target,wep,"hit")}/> `
+                    }
+                    
+                    <span class="item-field-label">Crit: </span>
+                    ${this.isEmbeddedSelector ? 
+                      html`<span class="item-field-fixed">${wep.crit}</span>`
+                      : html`<input class="item-field-input" type="number" .value=${wep.crit} @change=${(e) => this.modifyProperty(e.target,wep,"crit")}/>`
+                    } 
+                    
+                    <span class="item-field-label">Weight: </span>
+                    ${this.isEmbeddedSelector ? 
+                      html`<span class="item-field-fixed">${wep.weight}</span>`
+                      : html`<input class="item-field-input" type="number" min="0" .value=${wep.weight} @change=${(e) => this.modifyProperty(e.target,wep,"weight")}/>`
+                    }
+
+                    <span class="item-field-label">Rank: </span>
+                    ${this.isEmbeddedSelector ? 
+                      html`<span class="item-field-fixed">${wep.rank}</span>`
+                      : html`
+                      <select class="item-field-select" @change=${(e) => this.modifyProperty(e.target,wep,"rank")}>
+                        <option ?selected=${wep.rank == "E"} value="E">E</option>
+                        <option ?selected=${wep.rank == "D"} value="D">D</option>
+                        <option ?selected=${wep.rank == "C"} value="C">C</option>
+                        <option ?selected=${wep.rank == "B"} value="B">B</option>
+                        <option ?selected=${wep.rank == "A"} value="A">A</option>
+                        <option ?selected=${wep.rank == "S"} value="S">S</option>
+                      </select>`
+                    }
+                  </div>
               </div>
             `
         })}

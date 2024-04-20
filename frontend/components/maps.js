@@ -142,6 +142,10 @@ export class MapsPage extends LitElement {
     });
     this.addEventListener('back-from-props',() => {this.decorationView = false});
   }
+  firstUpdated(){
+    super.firstUpdated();
+    window.gs.activePage = this;
+  }
   refreshMap(){
     this.requestUpdate();
   }
