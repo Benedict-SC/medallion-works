@@ -111,6 +111,13 @@ export class UnitTemplate extends LitElement {
         border:1px solid #888;
         border-radius:7px;
     }
+    .template-item-delete-button{
+        float:right;
+        font-size:10px;
+        padding: 0px;
+        padding-bottom: 1px;
+        margin-top:2px;
+    }
     hr{
         margin-top:3px;
         margin-bottom:3px;
@@ -204,6 +211,16 @@ export class UnitTemplate extends LitElement {
         this.template.presetItems.push(item.id);
     }else{
         this.template.presetWeapons.push(item.id);
+    }
+    this.markUpdate();
+    this.requestUpdate();
+  }
+  removeItem(item,list){
+    let listToCheck = list == "ITEM" ? this.template.presetItems : this.template.presetWeapons;
+    console.log(listToCheck);
+    let idx = listToCheck.indexOf(item);
+    if(idx >= 0){
+        listToCheck.splice(idx,1);
     }
     this.markUpdate();
     this.requestUpdate();
@@ -372,7 +389,7 @@ export class UnitTemplate extends LitElement {
                             ${repeat(this.template.presetWeapons,(wep) => wep, (wep,idx) => {
                                 return html`
                                     <div class="template-item-row">
-                                    ${wep}
+                                    ${wep} <button class="template-item-delete-button" @click=${() => this.removeItem(wep,"WEAPON")}>❌</button>
                                     </div>
                                 `
                             })}
@@ -381,7 +398,7 @@ export class UnitTemplate extends LitElement {
                             ${repeat(this.template.presetItems,(item) => item, (item,idx) => {
                                 return html`
                                     <div class="template-item-row">
-                                    ${item}
+                                    ${item} <button class="template-item-delete-button" @click=${() => this.removeItem(item,"ITEM")}>❌</button>
                                     </div>
                                 `
                             })}

@@ -33,6 +33,12 @@ export class ItemTemplate{
             this.magic = templateObj.magic ? templateObj.magic : this.magic;
         }
     }
+    minRange(){
+        return Math.min(...this.range);
+    }
+    maxRange(){
+        return Math.max(...this.range);
+    }
     getCopy(){
         return new ItemTemplate(this);
     }

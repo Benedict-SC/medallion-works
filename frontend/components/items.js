@@ -28,6 +28,15 @@ export class ItemsPage extends LitElement {
       color:red;
       font-size:12px;
     }
+    .item-delete-button{
+      position:absolute;
+      top:0px;
+      right:0px;
+      font-size:10px;
+      padding: 0px;
+      padding-bottom: 1px;
+      margin-top:2px;
+    }
     .items-tabs{
       display:flex;
     }
@@ -54,6 +63,27 @@ export class ItemsPage extends LitElement {
       border-radius:5px;
       background-color:#EEF8FF;
       margin:1px;
+      position:relative;
+    }
+    .item-title-line{
+      display:flex;
+    }
+    .item-icon-container{
+      flex:1;
+      padding:4px;
+    }
+    .item-icon{
+      display:block;
+    }
+    .item-identifiers{
+      flex:70;
+    }
+    .item-id-line{
+      font-size:10px;
+      font-family:'Courier New', Courier, monospace;
+    }
+    .item-name-line{
+      line-height:16px;
     }
     .item-name{
       font-weight:bold;
@@ -61,6 +91,9 @@ export class ItemsPage extends LitElement {
     .item-field-input{
       width:40px;
       margin-right:8px;
+    }
+    .item-range-input{
+      width:30px;
     }
     .item-field-fixed{
       margin-right:8px;
@@ -89,6 +122,7 @@ export class ItemsPage extends LitElement {
       window.gs.items = data;
       this.processItems();
     });
+    this.addEventListener("field-modified-event",this.handleFieldUpdate);
   }
   firstUpdated(){
     super.firstUpdated();
@@ -117,7 +151,9 @@ export class ItemsPage extends LitElement {
   giveUniqueId(item){
     let orginalId = item.id;
     let itemsList = this.flattenedItems();
-    let foundMatch = itemsList.find(x => x.id == item.id);
+    let foundMatch = itemsList.find(x => {
+      return ((x != item) && (x.id == item.id));
+    });
     let counter = 2;
     while(foundMatch){
       item.id = orginalId + "-" + counter;
@@ -147,7 +183,16 @@ export class ItemsPage extends LitElement {
     newItem.wtype = this.currentCategory;
     this.giveUniqueId(newItem);
     this.categories[this.currentCategory].push(newItem);
+    this.someModified = true;
     this.requestUpdate();
+  }
+  removeItem(item){
+    let idx = this.categories[this.currentCategory].indexOf(item);
+    if(idx >= 0){
+      this.categories[this.currentCategory].splice(idx,1);
+      this.someModified = true;
+      this.requestUpdate();
+    }
   }
   selectTab(category){
     this.currentCategory = category;
@@ -161,14 +206,41 @@ export class ItemsPage extends LitElement {
   modifyProperty(eventTarget,item,propertyName){
     let originalValue = item[propertyName];
     let value = eventTarget.value;
-    let isNumber = eventTarget.type == "number";
-    if(isNumber){
+    if(eventTarget.type == "number"){
       value = parseInt(value);
     }
+    if(eventTarget.type == "checkbox"){
+      value = eventTarget.checked;
+    }
+    //console.log("value of input of type " + eventTarget.type + " is " + value);
     if(originalValue != value){
       this.someModified = true;
     }
     item[propertyName] = value;
+    this.requestUpdate();
+  }
+  updateRange(eventTarget,item,isMin){
+    let min = item.minRange();
+    let max = item.maxRange();
+    let value = parseInt(eventTarget.value);
+    if(isMin){
+      min = value;
+    }else{
+      max = value;
+    }
+    if(max < min){ max = min; }
+    if(min > max){ min = max; }
+    console.log("attempted min,max is " + min + "," + max);
+    let newRange = [];
+    for(let i = min; i <= max; i++){
+      newRange.push(i);
+    }
+    item.range = newRange;
+    this.someModified = true;
+    this.requestUpdate();
+  }
+  handleFieldUpdate(){
+    this.someModified = true;
     this.requestUpdate();
   }
   render() {
@@ -196,9 +268,23 @@ export class ItemsPage extends LitElement {
             return html`
               <div class=${"item-box" + (this.isEmbeddedSelector ? " clickable-item" : "")} @dblclick=${() => this.selectItem(wep)}>
                   <div class="item-title-line">
-                    <img src=${"./game-client/" + wep.iconfile}></img> 
-                    <span class="item-name">${wep.name}</span>
-                    ${wep.maxUses > 0 ? html`<span> (${wep.maxUses}/${wep.maxUses})</span>` : html``}
+                    <div class="item-icon-container">
+                      <img class="item-icon" src=${"./game-client/" + wep.iconfile}></img> 
+                    </div>
+                    <div class="item-identifiers">
+                      <div class="item-id-line">
+                        ${this.isEmbeddedSelector ? html`<span>${wep.id}</span>` : html`
+                        <editable-text-field .client=${wep} fieldName="id" warning="(Changing this ID after assignment may break references in unit data.)"></editable-text-field>`}
+                      </div>
+                      <div class="item-name-line">  
+                        ${this.isEmbeddedSelector ? html`<span class="item-name">${wep.name}</span>` : html`
+                        <editable-text-field class="item-name" .client=${wep} fieldName="name"></editable-text-field>`}
+                        ${wep.maxUses > 0 ? html`<span> (${wep.maxUses}/${wep.maxUses})</span>` : html``}
+                      </div>
+                    </div>
+                    ${this.isEmbeddedSelector ? html`` : html`
+                      <button class="item-delete-button" @click=${() => this.removeItem(wep)}>❌</button>
+                    `}
                   </div>
                   <div class="item-property-controls">
                     <span class="item-field-label">Uses: </span>
@@ -244,6 +330,17 @@ export class ItemsPage extends LitElement {
                         <option ?selected=${wep.rank == "S"} value="S">S</option>
                       </select>`
                     }
+                  </div>
+                  <div class="item-property-controls">
+                    <span class="item-field-label">Range:</span>
+                    <input class="item-range-input" type="number" min="1" .value=${wep.minRange()} @change=${(e) => this.updateRange(e.target,wep,true)}/>
+                    to
+                    <input class="item-range-input" type="number" min=${wep.minRange()} .value=${wep.maxRange()} @change=${(e) => this.updateRange(e.target,wep,false)}/>
+
+                    <span class="item-field-label">Magic:</span>
+                    <input type="checkbox" ?checked=${wep.magic} ?disabled=${this.isEmbeddedSelector} @change=${(e) => this.modifyProperty(e.target,wep,"magic")}/>
+                    <span class="item-field-label">Brave:</span>
+                    <input type="checkbox" ?checked=${wep.brave} ?disabled=${this.isEmbeddedSelector} @change=${(e) => this.modifyProperty(e.target,wep,"brave")}/>
                   </div>
               </div>`
           })}

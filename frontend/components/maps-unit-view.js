@@ -28,6 +28,7 @@ export class MapsUnitView extends LitElement{
       border: 1px solid #BBBBBB;
       margin:2px;
       padding:3px;
+      position:relative;
     }
     .faction-toggles-box{
         font-size:8px;
@@ -46,6 +47,20 @@ export class MapsUnitView extends LitElement{
     }
     .stat-blocks{
         margin:3px;
+    }
+    .unit-trash-button{
+        background-color:#FFEEEE;
+        border-radius:8px;
+        position:absolute;
+        top:0px;
+        right:0px;
+        font-weight: bold;
+        border: 1px solid #FF6666;
+    }
+    .unit-trash-button:hover{
+        background-color:#F0DDDD;
+        cursor:pointer;
+        text-shadow: red 0 0 4px;
     }
   `;
   static get properties() {
@@ -137,6 +152,14 @@ export class MapsUnitView extends LitElement{
   cancelUnitCreation(){
     this.createState = "NONE";
   }
+  deleteUnit(){
+    let confirmation = confirm("Delete " + gs.units[this.y][this.x].name + "?");
+    if(confirmation){
+        gs.units[this.y][this.x] = null;
+    }
+    this.requestUpdate();
+    gs.mapsComponent.refreshMap();
+  }
   toggleOtherBox(){
     let selector = this.renderRoot.querySelector("#otherToggle");
     this.otherSelected = selector.checked;
@@ -175,6 +198,7 @@ export class MapsUnitView extends LitElement{
                     <p>Pre-positioned player unit is here (${unit.armyId}). Data is pulled from the army object in the savefile.</p>
                 ` :
                   html`
+                    <button class="unit-trash-button" @click=${this.deleteUnit}>🗑</button>
                     <img class="portrait-img" src=${ "game-client/" + unit.portraitFile }></img> - <img class="map-sprite-img" src=${ "game-client/" + unit.mapSpriteFile }></img>
                     <div class="unit-name">Name: <input type="text" id=${unitid + "-name"} .value=${unit.name} @change=${(e) => {this.updateStat("name")}}></div>
                     <div class="faction-toggles-box">
