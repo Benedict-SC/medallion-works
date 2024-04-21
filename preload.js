@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('medallionAPI', {
   getSpriteGallery: () => ipcRenderer.invoke('sprites-wants-file-data'),
   uploadSprite: (path,location,filename) => ipcRenderer.invoke('sprites-saving-sprite',path,location,filename),
   deleteSprite: (path) => ipcRenderer.invoke('sprites-deleting-sprite',path),
+  createFolder: (location,foldername) => ipcRenderer.invoke('sprites-creating-folder',location,foldername),
   getItemsData: () => ipcRenderer.invoke('something-wants-item-data'),
   saveItemsData: (data) => ipcRenderer.invoke('items-saving-item-data',data)
 });

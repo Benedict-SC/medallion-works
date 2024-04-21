@@ -41,6 +41,9 @@ app.whenReady().then(() => {
     ipcMain.handle("sprites-saving-sprite",async (event,path,location,filename) => {
         return sprites.uploadSprite(path,location,filename);
     });
+    ipcMain.handle("sprites-creating-folder",async (event,location,foldername) => {
+        return sprites.createFolder(location,foldername);
+    });
     ipcMain.handle("sprites-deleting-sprite",async (event,path) => {
         return sprites.deleteSprite(path);
     });

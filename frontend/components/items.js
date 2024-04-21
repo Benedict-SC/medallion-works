@@ -107,7 +107,8 @@ export class ItemsPage extends LitElement {
       currentCategory: {type:String},
       someModified: {type:Boolean},
       saving: {type:Boolean},
-      referenceCategories: {type:Array}
+      referenceCategories: {type:Array},
+      waitingItem: {type:Object}
     };
   }
 
@@ -239,6 +240,25 @@ export class ItemsPage extends LitElement {
     this.someModified = true;
     this.requestUpdate();
   }
+  modifyIcon(item){
+    if(this.isEmbeddedSelector){
+      return;
+    }
+    this.waitingItem = item;
+    const event = new CustomEvent("request-sprite-filename", { bubbles:true, composed:true, detail: this });
+    this.dispatchEvent(event);
+  }
+  receiveFilename(filename){
+    let oldValue = this.waitingItem.iconfile;
+    if(filename){
+        this.waitingItem.iconfile = filename;
+        if(filename != oldValue){
+          this.someModified = true;
+          this.requestUpdate();
+        }
+    }
+    this.waitingItem = null;
+  }
   handleFieldUpdate(){
     this.someModified = true;
     this.requestUpdate();
@@ -269,7 +289,7 @@ export class ItemsPage extends LitElement {
               <div class=${"item-box" + (this.isEmbeddedSelector ? " clickable-item" : "")} @dblclick=${() => this.selectItem(wep)}>
                   <div class="item-title-line">
                     <div class="item-icon-container">
-                      <img class="item-icon" src=${"./game-client/" + wep.iconfile}></img> 
+                      <img class="item-icon" src=${"./game-client/" + wep.iconfile} @dblclick=${() => this.modifyIcon(wep)}></img> 
                     </div>
                     <div class="item-identifiers">
                       <div class="item-id-line">

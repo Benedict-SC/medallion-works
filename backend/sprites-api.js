@@ -56,7 +56,7 @@ class SpritesAPI{
             this.populateFileData(f,this.root);
         });
     }
-    populateFilePaths(dirent,prefix=""){
+    /*populateFilePaths(dirent,prefix=""){
         if(dirent.isFile()){
             //console.log("img file found: " + prefix + dirent.name);
             this.imgFilenames.push(prefix + dirent.name);
@@ -68,12 +68,13 @@ class SpritesAPI{
                 this.populateFilePaths(f,newprefix);
             });
         }
-    }
+    }*/
     populateFileData(dirent,forf){
         let newFile = new FileOrFolder(dirent.name,forf.prefix + forf.name + "/");
         if(dirent.isFile()){
             //we're done
         }else if(dirent.isDirectory()){
+            newFile.markAsFolder();
             const imgFiles = fs.readdirSync(newFile.prefix + newFile.name + "/",{withFileTypes:true});
             imgFiles.forEach(f => {
                 this.populateFileData(f,newFile);
@@ -94,6 +95,10 @@ class SpritesAPI{
     uploadSprite(file,location,name){
         console.log(file + " saves to " + location + " with name " + name);
         fs.copyFileSync(file,location+name);
+        this.loadFileData();
+    }
+    createFolder(location,name){
+        fs.mkdirSync(location+name);
         this.loadFileData();
     }
 }

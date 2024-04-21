@@ -50,6 +50,9 @@ export class SpritesPage extends LitElement {
     .file-delete-button:hover{
       text-shadow: red 0 0 4px;
     }
+    .folder-create-input:invalid{
+      background-color:pink;
+    }
   `;
   static get properties() {
     return {
@@ -130,6 +133,19 @@ export class SpritesPage extends LitElement {
       });      
     }
   }
+  createFolder(){
+    let fnameinput = this.renderRoot.querySelector("#folder-create-name");
+    let value = fnameinput.value;
+    let match = value.match(/^[a-zA-Z-]+$/g)
+    if(match && value.length > 0){
+      let folderpath = this.folder.prefix + this.folder.name + "/";
+      window.medallionAPI.createFolder(folderpath,value).then(response => {
+        this.reload();
+      }).catch(err => {
+        console.log("error: %o",err);
+      });  
+    }
+  }
   backUp(){
     this.folder = this.folder.parent;
   }
@@ -187,6 +203,10 @@ export class SpritesPage extends LitElement {
         <div class="file-upload-station">
               <input type="file" id="sprite-upload-button" name="sprite-upload" accept="image/png"/>
               <button @click=${this.uploadFile}>Upload here</button>
+        </div>
+        <div class="folder-create">
+              New folder name: <input type="text" maxlength=20 pattern="[a-zA-Z\\\-]+" title="Letters and dashes only." id="folder-create-name" class="folder-create-input"/>
+              <button @click=${this.createFolder}>Create new folder</button>
         </div>
       </div>
     `;

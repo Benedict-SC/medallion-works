@@ -217,7 +217,7 @@ export class UnitTemplate extends LitElement {
   }
   removeItem(item,list){
     let listToCheck = list == "ITEM" ? this.template.presetItems : this.template.presetWeapons;
-    console.log(listToCheck);
+    //console.log(listToCheck);
     let idx = listToCheck.indexOf(item);
     if(idx >= 0){
         listToCheck.splice(idx,1);
