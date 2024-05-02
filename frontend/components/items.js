@@ -71,6 +71,7 @@ export class ItemsPage extends LitElement {
     .item-icon-container{
       flex:1;
       padding:4px;
+      cursor:pointer;
     }
     .item-icon{
       display:block;
