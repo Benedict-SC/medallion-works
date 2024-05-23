@@ -1,4 +1,4 @@
-import {LitElement, staticHtml, html, literal, css} from '../../lit-all.min.js';
+import {LitElement, html, css, repeat} from '../../lit-all.min.js';
 class MapUnit{
     constructor(){
         this.maxhp = 1;
@@ -61,6 +61,32 @@ export class MapsUnitView extends LitElement{
         background-color:#F0DDDD;
         cursor:pointer;
         text-shadow: red 0 0 4px;
+    }
+    .unit-name-input{
+        width:140px;
+    }
+    .unit-inventory{
+        background-color: #F0E8FF;
+        font-size:12px;
+        padding:2px;
+        border-radius:3px;
+        margin-top:3px;
+    }
+    .unit-section-label{
+        font-weight:bold;
+        font-size:10px;
+        margin-top:-5px;
+        margin-left:-2px;
+    }
+    .unit-ai{
+        background-color: #E0FFD8;
+        font-size:12px;
+        padding:2px;
+        border-radius:3px;
+        margin-top:3px;
+    }
+    .unit-objective-id-input{
+        width:110px;
     }
   `;
   static get properties() {
@@ -138,8 +164,11 @@ export class MapsUnitView extends LitElement{
     unit.faction = faction;
     unit.name = template.name;
     unit.level = level;
+    console.log(template.presetWeapons);
     unit.weapons = [];
     unit.items = [];
+    unit.presetWeapons = template.presetWeapons ? template.presetWeapons : [];
+    unit.presetItems = template.presetItems ? template.presetItems : [];
     gs.units[this.y][this.x] = unit;
     gs.mapsComponent.refreshMap();
     this.createState = "NONE";
@@ -180,7 +209,25 @@ export class MapsUnitView extends LitElement{
     let unitid = "unit-y" + this.y + "-x" + this.x;
     let unit = gs.units[this.y][this.x];
     let statInput = this.renderRoot.querySelector("#" + unitid + "-" + statname);
-    unit[statname] = statInput.value;
+    if(statInput.value == "" || statInput.value == null){
+        statInput.value = 0;
+    }
+    let value = statInput.value;
+    if(statname != "name"){
+        value = parseInt(value);
+    }
+    unit[statname] = value;
+    if(statname == "maxhp"){
+        unit["hp"] = value;
+    }
+  }
+  updateString(event,unit,stringname){
+    let source = event.target;
+    unit[stringname] = source.value;
+    if(stringname == "aiStrategy" && source.value == "OBJECTIVE" && !unit.aiObjectiveId){
+        unit.aiObjectiveId = ""; //otherwise it just shows 'undefined'
+    }
+    this.requestUpdate();
   }
 
   render(){
@@ -200,7 +247,7 @@ export class MapsUnitView extends LitElement{
                   html`
                     <button class="unit-trash-button" @click=${this.deleteUnit}>🗑</button>
                     <img class="portrait-img" src=${ "game-client/" + unit.portraitFile }></img> - <img class="map-sprite-img" src=${ "game-client/" + unit.mapSpriteFile }></img>
-                    <div class="unit-name">Name: <input type="text" id=${unitid + "-name"} .value=${unit.name} @change=${(e) => {this.updateStat("name")}}></div>
+                    <div class="unit-name">Name: <input class="unit-name-input" type="text" id=${unitid + "-name"} .value=${unit.name} @change=${(e) => {this.updateStat("name")}}></div>
                     <div class="faction-toggles-box">
                         <input class="tiny-radio" type="radio" id="enemyToggle" name="factionSelect" value="ENEMY" @change=${this.updateUnitFaction}>
                         <label for="enemyToggle">ENEMY</label>
@@ -211,6 +258,8 @@ export class MapsUnitView extends LitElement{
                         <input type="text" class="other-specifier" id="otherSpecifier" .value=${unit.faction} ?disabled=${!this.otherSelected}>
                     </div>
                     <div class="stat-blocks">
+                        <div class="stat-div">  HP: <input class="stat-input" type="number" id=${unitid + "-maxhp"} .value=${unit.maxhp ? unit.maxhp : 0} @change=${(e) => {this.updateStat("maxhp")}}> 
+                        </div>
                         <div class="stat-div">  STR: <input class="stat-input" type="number" id=${unitid + "-str"} .value=${unit.str ? unit.str : 0} @change=${(e) => {this.updateStat("str")}}> 
                                                 LUK: <input class="stat-input" type="number" id=${unitid + "-luk"} .value=${unit.luk ? unit.luk : 0} @change=${(e) => {this.updateStat("luk")}}></div>
                         <div class="stat-div">  SKL: <input class="stat-input" type="number" id=${unitid + "-skl"} .value=${unit.skl ? unit.skl : 0} @change=${(e) => {this.updateStat("skl")}}>
@@ -218,7 +267,57 @@ export class MapsUnitView extends LitElement{
                         <div class="stat-div">  SPD: <input class="stat-input" type="number" id=${unitid + "-spd"} .value=${unit.spd ? unit.spd : 0} @change=${(e) => {this.updateStat("spd")}}>
                                                 RES: <input class="stat-input" type="number" id=${unitid + "-res"} .value=${unit.res ? unit.res : 0} @change=${(e) => {this.updateStat("res")}}></div>
                         <div class="stat-div">  CON: <input class="stat-input" type="number" id=${unitid + "-con"} .value=${unit.con ? unit.con : 0} @change=${(e) => {this.updateStat("con")}}>
-                                                MOV: <input class="stat-input" type="number" id=${unitid + "-mov"} .value=${unit.mov ? unit.mov : 0} @change=${(e) => {this.updateStat("res")}}></div>
+                                                MOV: <input class="stat-input" type="number" id=${unitid + "-mov"} .value=${unit.mov ? unit.mov : 0} @change=${(e) => {this.updateStat("mov")}}></div>
+                    </div>
+                    <div class="unit-inventory">
+                        <div class="unit-section-label">Inventory</div>
+                        <div class="unit-weapons">
+                        ${
+                            unit.presetWeapons ? 
+                            repeat(unit.presetWeapons, (wep) => wep, (wep,idx) => {
+                            return html`<div class="unit-item">${wep}</div>`}) 
+                            : html`ERROR: Weapons missing`
+                        }
+                        ${
+                            (unit.presetWeapons && unit.presetWeapons.length < 4) ? html`<div class="unit-inv-add">+ Add weapon</div>` : html``
+                        }
+                        </div>
+                        <hr style="margin:2px;"/>
+                        <div class="unit-items">
+                        ${
+                            unit.presetItems ? 
+                            repeat(unit.presetItems, (item) => item, (item,idx) => {
+                            return html`<div class="unit-item">${item}</div>`}) 
+                            : html`ERROR: Items missing`
+                        }
+                        ${
+                            (unit.presetItems && unit.presetItems.length < 4) ? html`<div class="unit-inv-add">+ Add item</div>` : html``
+                        }
+                        </div>
+                    </div>
+                    <div class="unit-ai">
+                        <div class="unit-section-label">AI</div>
+                        <div class="unit-strategy">
+                            Strategy: <select class="unit-strat-select" id="stratSelect" @change=${(e) => this.updateString(e,unit,"aiStrategy")}>
+                            <option ?selected=${unit.aiStrategy == "SENTRY"} value="SENTRY">SENTRY</option>
+                            <option ?selected=${unit.aiStrategy == "AGGRO"} value="AGGRO">AGGRO</option>
+                            <option ?selected=${unit.aiStrategy == "OBJECTIVE"} value="OBJECTIVE">OBJECTIVE</option>
+                            </select>
+                        </div>
+                        <div class="unit-tactics">
+                            Tactics: <select class="unit-tact-select" id="tactSelect" @change=${(e) => this.updateString(e,unit,"aiTactics")}>
+                            <option ?selected=${unit.aiStrategy == "RANDOM"} value="RANDOM">RANDOM</option>
+                            <option ?selected=${unit.aiStrategy == "NORMAL"} value="NORMAL">NORMAL</option>
+                            <option ?selected=${unit.aiStrategy == "SMART"} value="SMART">SMART</option>
+                            </select>
+                        </div>
+                        <div class="unit-risk">Riskiness: <input type="range" min="0" max="100" step="1"/></div>
+                        ${ unit.aiStrategy == "OBJECTIVE" ? html`
+                            <div class="unit-objective">
+                                Objective ID: <input class="unit-objective-id-input" .value=${unit.aiObjectiveId} @change=${(e) => this.updateString(e,unit,"aiObjectiveId")}/>
+                            </div>` 
+                            : html``
+                        }
                     </div>
                   `
                 : this.createState == "NONE" ? html`

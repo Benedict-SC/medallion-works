@@ -49,6 +49,9 @@ export class UnitTemplateData{
             this.presetWeapons = [];
             this.presetItems = [];
         }
+        this.hp = this.maxhp;
+        this.aiStrategy = "SENTRY";
+        this.aiTactics = "NORMAL";
     }
     getCopy(){
         return new UnitTemplateData(this);

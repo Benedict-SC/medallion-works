@@ -183,6 +183,10 @@ export class MapsPage extends LitElement {
     });
   }
   saveMapData(){
+    if(this.currentMapName == undefined){
+      console.log("hey what the hell! why's it undefined???");
+      return;
+    }
     this.validateUnits();
     let flattenedUnits = [];
     for(let i = 0; i < this.gs.units.length; i++){
@@ -391,6 +395,12 @@ export class MapsPage extends LitElement {
           if(unit.presetItems == undefined){
             unit.presetItems = [];
           }
+          if(unit.aiStrategy == undefined){
+            unit.aiStrategy = "SENTRY";
+          }
+          if(unit.aiTactic == undefined){
+            unit.aiTactics = "NORMAL";
+          }
         }
       }
     }
@@ -398,7 +408,6 @@ export class MapsPage extends LitElement {
   render() {
     return html`
       <div>
-        <p>Maps go here.</p>
         <select id="map-selector">
           ${this.maplist.map((mapname,index) => {
             return html`<option value=${mapname}>${mapname}</option>`
