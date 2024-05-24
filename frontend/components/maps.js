@@ -50,6 +50,12 @@ export class MapsPage extends LitElement {
       width:46px;
       border: 2px solid white;
     }
+    .map-cell:hover{
+      border-color: #66E;
+    }
+    .map-cell-selected{
+      border-color: #55B;
+    }
     .tile-detail{
       flex:1;
       border: 2px solid #666666;
@@ -83,26 +89,29 @@ export class MapsPage extends LitElement {
       top:-1px;
       pointer-events:none;
     }
-    .grass {
-      background-color: #d0e7b7;
-      border: 2px solid #d0e7b7;
+    .wall-n{
+      border-top-color:black;
     }
-    .grass:hover{
-      border: 2px solid #87c93e;
+    .wall-w{
+      border-left-color:black;
     }
-    .trees {
-      background-color: #7d9c5c;
-      border: 2px solid #7d9c5c;
+    .wall-s{
+      border-bottom-color:black;
     }
-    .trees:hover {
-      border: 2px solid #477715;
+    .wall-e{
+      border-right-color:black;
     }
-    .hills {
-      background-color: #8f9079;
-      border: 2px solid #8f9079;
+    .wall-n:hover{
+      border-top-color:navy;
     }
-    .hills:hover {
-      border: 2px solid #69643e;
+    .wall-w:hover{
+      border-left-color:navy;
+    }
+    .wall-s:hover{
+      border-bottom-color:navy;
+    }
+    .wall-e:hover{
+      border-right-color:navy;
     }
   `;
   static get properties() {
@@ -291,9 +300,18 @@ export class MapsPage extends LitElement {
     this.currentMapName = newfilename + ".json";
     this.requestUpdate();
   }
-  cellClasses = ["","grass","trees","hills"];
-  cellClass(cell){
-    return "map-cell" + ((cell.tile <= 0 || cell.tile >= this.cellClasses.length) ? "" : " " + this.cellClasses[cell.tile]);
+  cellClass(cell,x,y){
+    let classString = "map-cell";
+    if(x == this.activeTile.x && y == this.activeTile.y){
+      classString += " map-cell-selected";
+    }
+    if(cell.walls){
+      if(cell.walls.n){ classString += " wall-n"; }
+      if(cell.walls.e){ classString += " wall-e"; }
+      if(cell.walls.s){ classString += " wall-s"; }
+      if(cell.walls.w){ classString += " wall-w"; }
+    }
+    return classString;
   }
   toolSelectionClass(id){
     let tclass = "toolbar-button";
@@ -429,7 +447,7 @@ export class MapsPage extends LitElement {
             ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
-                  return html`<div class=${this.cellClass(cell)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell.tile) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}} @mouseup=${() => {this.mouseup(xindex,yindex)}}>
+                  return html`<div class=${this.cellClass(cell,xindex,yindex)} @click=${() => {this.activateCell(xindex,yindex)}} @mousedown=${() => {this.mousedown(xindex,yindex)}} style=${"background-image:url('./game-client/" + this.getImagePathFromCellCode(cell.tile) + "')"} @mouseover=${() => {this.mouseover(xindex,yindex);}} @mouseup=${() => {this.mouseup(xindex,yindex)}}>
                     ${
                       cell.isStartingPosition ? html`
                         <img class="starting-position-img" src="game-client/assets/img/startingPosition.png" draggable="false">
