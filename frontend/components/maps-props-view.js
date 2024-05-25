@@ -20,6 +20,7 @@ export class MapDecorationWindow extends LitElement {
       user-select: none;
       padding:5px;
       background-color:#555555;
+      max-height:700px;
     }
     .map-grid { 
       flex:4;
@@ -54,6 +55,8 @@ export class MapDecorationWindow extends LitElement {
       flex:1;
       background-color:#AAAAAA;
       padding:5px;
+      min-width:200px;
+      overflow:scroll;
     }
     .prop-control-row-1{
       display:flex;

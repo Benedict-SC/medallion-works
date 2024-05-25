@@ -5,20 +5,28 @@ export class MapsPage extends LitElement {
     .newmap-filename-input{
       text-align:right;
     }
+    .map-editor{
+      max-width:100vw;
+      max-height:800px;
+    }
     .map-ui{
       display:flex;
+      max-width:100%;
       user-select: none;
     }
-    .map-grid { 
+    .map-main{
       flex:2.5;
-      overflow:scroll;
-      max-height:90vh;
-      min-height:300px;
+      max-height:700px;
+      max-width:70%;
       background-color:#555555;
+    }
+    .map-grid { 
+      overflow:scroll;
+      height:94%;
     }
     .map-toolbar{
       background-color:#444444;
-      width:100%;
+      width:98%;
       padding:4px;
     }
     .toolbar-button{
@@ -31,7 +39,8 @@ export class MapsPage extends LitElement {
       float:right;
       color:#ebebeb;
       font-weight:bold;
-      margin-right:10px;
+      margin-right:4px;
+      margin-top:1px;
     }
     .toolbar-selected{
       background-color: #666666;
@@ -58,6 +67,7 @@ export class MapsPage extends LitElement {
     }
     .tile-detail{
       flex:1;
+      width:235px;
       border: 2px solid #666666;
       padding:3px;
     }
@@ -113,6 +123,45 @@ export class MapsPage extends LitElement {
     .wall-e:hover{
       border-right-color:navy;
     }
+    .wall-control-box{
+      perspective:50px;
+      transform-style:preserve-3d;
+      position:relative;
+      height:46px;
+      width:46px;
+    }
+    .wall-control-pane{
+      background-color:#0000;
+      position:absolute;
+      top:0px;
+      left:0px;
+      height:46px;
+      width:46px;
+    }
+    .wall-control-pane:hover{
+      background-color:#0005;
+      border:1px solid white;
+    }
+    .wall-control-bottom{
+      position:absolute;
+      transform: rotateX(90deg);
+      transform-origin:bottom;
+    }
+    .wall-control-top{
+      position:absolute;
+      transform: rotateX(-90deg);
+      transform-origin:top;
+    }
+    .wall-control-left{
+      position:absolute;
+      transform: rotateY(90deg);
+      transform-origin:left;
+    }
+    .wall-control-right{
+      position:absolute;
+      transform: rotateY(-90deg);
+      transform-origin:right;
+    }
   `;
   static get properties() {
     return {
@@ -124,7 +173,7 @@ export class MapsPage extends LitElement {
       movingUnit: {type:Object},
       movingSourceCell: {type:Object},
       movingHoversOver: {type:Object},
-      selectedTool: {type:String}, //select, paint, move
+      selectedTool: {type:String}, //select, paint, move, fence
       paintingTileID: {type:Number},
       decorationView: {type:Boolean}
     };
@@ -331,6 +380,41 @@ export class MapsPage extends LitElement {
   toggleDecorationView(){
     this.decorationView = !this.decorationView;
   }
+  toggleWall(cell,x,y,quadrant){
+    console.log("we're togglin'");
+    let otherCell = null;
+    let oppositeQuadrants = {n:"s",s:"n",e:"w",w:"e"}
+    if(quadrant == "n"){
+      if(y > 0){
+        otherCell = this.gs.mapData.tiles[y-1][x];
+      }
+    }else if(quadrant == "s"){
+      if(y < this.gs.mapData.tiles.length - 1){
+        otherCell = this.gs.mapData.tiles[y+1][x];
+      }
+    }else if(quadrant == "e"){
+      if(x < this.gs.mapData.tiles[0].length - 1){
+        otherCell = this.gs.mapData.tiles[y][x+1];
+      }
+    }else if(quadrant == "w"){
+      if(x > 0){
+        otherCell = this.gs.mapData.tiles[y][x-1];
+      }
+    }else{
+      return; //????
+    }
+    if(!cell.walls){
+      cell.walls = {};
+    }
+    cell.walls[quadrant] = !(cell.walls[quadrant]);
+    if(otherCell){
+      if(!otherCell.walls){
+        otherCell.walls = {};
+      }
+      otherCell.walls[oppositeQuadrants[quadrant]] = cell.walls[quadrant];
+    }
+    this.requestUpdate();
+  }
   mousedown(x,y){
     if(this.selectedTool == "paint"){
       this.paintCell(x,y);
@@ -435,15 +519,18 @@ export class MapsPage extends LitElement {
         <div>
           Or create a new map: <input id="newmap-width" type="number" value="1" min="1" max="60"/> wide by <input id="newmap-height" type="number" value="1" min="1" max="60"/> tall, save to <input id="newmap-filepath" class="newmap-filename-input" type="text" maxlength="32" @keyup=${this.validateMapFilename}>.json <button @click=${this.createNewMap}>Create</button>
         </div>
+        <div class="map-editor">
         ${ !(this.decorationView) ? html`
         <div class="map-ui">
-          <div class="map-grid">
+          <div class="map-main">
             <div class="map-toolbar">
               <button class=${this.toolSelectionClass("select")} @click=${(e) => {this.selectTool("select");}}><img src="frontend/assets/select-icon.png"/></button>
               <button class=${this.toolSelectionClass("paint")} @click=${(e) => {this.selectTool("paint");}}><img src="frontend/assets/paint-icon.png"/></button>  
               <button class=${this.toolSelectionClass("move")} @click=${(e) => {this.selectTool("move");}}><img src="frontend/assets/move-icon.png"/></button>
+              <button class=${this.toolSelectionClass("fence")} @click=${(e) => {this.selectTool("fence");}}><img src="frontend/assets/fence-icon.png"/></button>
               <button class="toolbar-button toolbar-not-a-state" @click=${this.toggleDecorationView}>Decorate map</button>             
             </div>
+            <div class="map-grid">
             ${this.gs.mapData.tiles.map((row,yindex) => {
               return html`<div class="map-row">
                 ${row.map((cell,xindex) => {
@@ -459,10 +546,21 @@ export class MapsPage extends LitElement {
                         <img class="ghost-unit" src=${this.movingUnit ? "game-client/" + (this.movingUnit.mapSpriteFile ? this.movingUnit.mapSpriteFile : "assets/img/qmark.png") : ""} draggable="false"/>
                         ` : html``
                     }
+                    ${
+                      this.selectedTool == "fence" ? html`
+                      <div class="wall-control-box">
+                        <div class="wall-control-pane wall-control-top" @click=${() => this.toggleWall(cell,xindex,yindex,"n")}></div>
+                        <div class="wall-control-pane wall-control-bottom" @click=${() => this.toggleWall(cell,xindex,yindex,"s")}></div>
+                        <div class="wall-control-pane wall-control-left" @click=${() => this.toggleWall(cell,xindex,yindex,"w")}></div>
+                        <div class="wall-control-pane wall-control-right" @click=${() => this.toggleWall(cell,xindex,yindex,"e")}></div>
+                      </div>
+                      ` : html``
+                    }
                   </div>`
                 })}
               </div>`
             })}
+            </div>
           </div>
           <div class="tile-detail">
           ${this.selectedTool == "select" ?
@@ -518,6 +616,7 @@ export class MapsPage extends LitElement {
           </div>
         </div>
         `:html`<maps-props-view .props=${this.gs.mapData.props} currentMapName=${this.currentMapName} tileSize=50></maps-props-view>`}
+        </div>
 
         <button @click=${this.saveMapData}>Press to save map data</button>
         <p>${JSON.stringify(this.gs.mapData)}</p>
