@@ -1,4 +1,5 @@
-import {LitElement, staticHtml, html, literal, css} from '../../lit-all.min.js';
+import {LitElement, staticHtml, html, literal, css, repeat} from '../../lit-all.min.js';
+import { InteractTemplate } from '../objects/interact-template.js';
 
 export class MapsPage extends LitElement {
   static styles = css`
@@ -162,12 +163,45 @@ export class MapsPage extends LitElement {
       transform: rotateY(-90deg);
       transform-origin:right;
     }
+    .map-interactions-list{
+      font-size:12px;
+    }
+    .map-interaction{
+      position:relative;
+      background-color:#EEFFDD;
+      margin:2px;
+      padding:1px;
+      border-radius:3px;
+    }
+    .map-interactions-text-input{
+      width:100px;
+    }
+    .map-interact-indicator{
+      position:absolute;
+      bottom:0px;
+      right:0px;
+    }
+    .map-interaction-trash-button{
+        background-color:#FFEEEE;
+        border-radius:8px;
+        position:absolute;
+        top:0px;
+        right:6px;
+        font-weight: bold;
+        border: 1px solid #FF6666;
+    }
+    .map-interaction-trash-button:hover{
+        background-color:#F0DDDD;
+        cursor:pointer;
+        text-shadow: red 0 0 4px;
+    }
   `;
   static get properties() {
     return {
       gs: {type:Object},
       mutex: {type:Boolean},
       maplist: {type:Array},
+      interactIdsList: {type:Array},
       currentMapName: {type:String},
       activeTile: {type:Object},
       movingUnit: {type:Object},
@@ -193,6 +227,9 @@ export class MapsPage extends LitElement {
     }
     if(!this.maplist){
       this.maplist = [];
+    }
+    if(!this.interactIdsList){
+      this.interactIdsList = [];
     }
     window.medallionAPI.getTerrainData().then(result => {
       this.gs.nativeTerrain = result.native;
@@ -224,6 +261,19 @@ export class MapsPage extends LitElement {
           let value = data.tiles[i][j];
           if(!(value.tile) && Number.isInteger(value)){
             this.gs.mapData.tiles[i][j] = {tile:value};
+          }
+          if(value.interaction){ //compensate for inconsistent single-interact vs list-of-interacts data formats. TODO: remove this later once no single-interacts exist
+            if(!(value.interactions)){
+              value.interactions = [];
+            }
+            value.interactions.push(value.interaction);
+            delete value.interaction;
+          }
+          this.interactIdsList = [];
+          if(value.interactions){
+            for(let k=1;k<value.interactions.length;k++){
+              this.interactIdsList.push(value.interactions[k].id);
+            }
           }
         }
       }//we could do this next part in the same loop but let's keep them separate so it's clear what they do
@@ -268,6 +318,7 @@ export class MapsPage extends LitElement {
   activateCell(x,y){
     if(this.selectedTool == "select"){
       this.activeTile = {x:x,y:y};
+      console.log(this.activeCell());
     }
   }
   valueOfActiveCell(){
@@ -415,6 +466,34 @@ export class MapsPage extends LitElement {
     }
     this.requestUpdate();
   }
+  updateInteractField(event,interact,fieldname){
+    let newValue = event.target.value;
+    interact[fieldname] = newValue;
+  }
+  addNewInteract(cell){
+    if(!cell.interactions){
+      cell.interactions = [];
+    }
+    let interact = new InteractTemplate();
+    let originalId = interact.id;
+    let foundMatch = this.interactIdsList.find(x => x == interact.id);
+    let counter = 2;
+    while(foundMatch){
+      interact.id = originalId + "-" + counter;
+      counter++;
+      foundMatch = this.interactIdsList.find(x => {
+        return x == interact.id;
+      });
+    }
+    this.interactIdsList.push(interact.id);
+    cell.interactions.push(interact);
+    this.requestUpdate();
+  }
+  removeInteract(interact,cell){
+    cell.interactions = cell.interactions.filter(x => x != interact);
+    this.interactIdsList = this.interactIdsList.filter(x => x != interact.id);
+    this.requestUpdate();
+  }
   mousedown(x,y){
     if(this.selectedTool == "paint"){
       this.paintCell(x,y);
@@ -546,6 +625,9 @@ export class MapsPage extends LitElement {
                         <img class="ghost-unit" src=${this.movingUnit ? "game-client/" + (this.movingUnit.mapSpriteFile ? this.movingUnit.mapSpriteFile : "assets/img/qmark.png") : ""} draggable="false"/>
                         ` : html``
                     }
+                    ${cell.interactions ? html`
+                      <img class="map-interact-indicator" src="frontend/assets/tiny-exclamation.png">
+                    ` : html``}
                     ${
                       this.selectedTool == "fence" ? html`
                       <div class="wall-control-box">
@@ -586,6 +668,31 @@ export class MapsPage extends LitElement {
                         <label for="startNo">No</label>
                         <input type="radio" name="starting-select" id="startNo" value=false @change=${this.updateStartingPosition}>
                     </div>
+                    <hr/>
+                    ${this.activeCell().interactions ? html`
+                      <div class="map-interactions-list">
+                        ${repeat(this.activeCell().interactions,(interact) => interact,(interact,idx) => {
+                          return html`
+                            <div class="map-interaction">
+                            <button class="map-interaction-trash-button" @click=${() => this.removeInteract(interact,this.activeCell())}>🗑</button>
+                            ID: <input class="map-interactions-text-input" type="text" value=${interact.id} @change=${(e) => this.updateInteractField(e,interact,"id")}/><br/>
+                            Name: <input class="map-interactions-text-input" type="text" value=${interact.name} @change=${(e) => this.updateInteractField(e,interact,"name")}/><br/>
+                            Menu option: <input type="checkbox" ?checked=${interact.displaysInMenu} @change=${(e) => {interact.displaysInMenu = !!(e.target.checked)}}/>
+                            Highlight: <input type="checkbox" ?checked=${interact.displaysOnMap} @change=${(e) => {interact.displaysOnMap = !!(e.target.checked)}}/>
+                            Type: <select>
+                              <option ?selected=${interact.actionType == "Script"} value="Script">Script</option>
+                              <option ?selected=${interact.actionType == "Seize"} value="Seize">Seize</option>
+                              <option ?selected=${interact.actionType == "Sack"} value="Sack">Sack</option>
+                            </select>
+                            </div>
+                          `
+                        })}
+                        <button @click=${(e) => this.addNewInteract(this.activeCell())}>Add new</button>
+                      </div>
+                    `:html` <div class="map-interactions-list">
+                              No interactions on this tile.<br/>
+                              <button @click=${(e) => this.addNewInteract(this.activeCell())}>Add one?</button>
+                            </div>`}
                   `
                 : html`<p>No tile selected.</p>`
               }
