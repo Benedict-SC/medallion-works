@@ -2,9 +2,11 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require("path");
 const MapsAPI = require("./backend/maps-api");
 const TemplatesAPI = require('./backend/templates-api');
+const FilesAPI = require('./backend/files-api');
 const SpritesAPI = require('./backend/sprites-api');
 const maps = new MapsAPI();
 const templates = new TemplatesAPI();
+const files = new FilesAPI();
 const sprites = new SpritesAPI();
 const createWindow = function(){
     const win = new BrowserWindow({
@@ -41,11 +43,25 @@ app.whenReady().then(() => {
     ipcMain.handle("sprites-saving-sprite",async (event,path,location,filename) => {
         return sprites.uploadSprite(path,location,filename);
     });
-    ipcMain.handle("sprites-creating-folder",async (event,location,foldername) => {
-        return sprites.createFolder(location,foldername);
-    });
     ipcMain.handle("sprites-deleting-sprite",async (event,path) => {
         return sprites.deleteSprite(path);
+    });
+    ipcMain.handle("something-wants-file-data",async (event) => {
+        return files.getAllFileData();
+    });
+    ipcMain.handle("something-saving-file",async (event,path,location,filename) => {
+        return files.uploadFile(path,location,filename);
+    });
+    ipcMain.handle("something-creating-folder",async (event,location,foldername) => {
+        files.createFolder(location,foldername);
+        sprites.loadFileData();
+        return;
+    });
+    ipcMain.handle("something-deleting-file",async (event,path) => {
+        return files.deleteFile(path);
+    });
+    ipcMain.handle("something-wants-file-json",async (event,path) => {
+        return files.loadJsonFile(path);
     });
     ipcMain.handle("something-wants-item-data",async (event) =>{
         return await templates.getItemsData();

@@ -58,6 +58,8 @@ export class AppWrapper extends LitElement {
       return html`<items-page></items-page>`;
     }else if(this.view == "Sprites"){
       return html`<sprites-page></sprites-page>`;
+    }else if(this.view == "Dialogue"){
+      return html`<dialogue-page></dialogue-page>`;
     }else{
       return html`<span>Invalid view.</span>`
     }
@@ -80,6 +82,7 @@ export class AppWrapper extends LitElement {
           <mw-nav-item target="Units" text="Edit Units"></mw-nav-item>
           <mw-nav-item target="Items" text="Edit Items"></mw-nav-item>
           <mw-nav-item target="Sprites" text="Sprite Bank"></mw-nav-item>
+          <mw-nav-item target="Dialogue" text="Edit Dialogue"></mw-nav-item>
         </div>
         <div>
           ${this.getView()}
