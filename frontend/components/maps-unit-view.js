@@ -124,7 +124,7 @@ export class MapsUnitView extends LitElement{
     let selector = this.renderRoot.querySelector("#templateSelect");
     let templateIndex = parseInt(selector.value);
     selector = this.renderRoot.querySelector("#templateLevelSelect");
-    let level = selector.value;
+    let level = parseInt(selector.value);
     selector = this.renderRoot.querySelector("input[name='factionSelect']:checked");
     let faction = selector.value;
     if(faction == "OTHER"){
@@ -133,6 +133,8 @@ export class MapsUnitView extends LitElement{
     }
     let template = window.gs.templates[templateIndex];
     let unit = new MapUnit();
+    unit.maxhp = template.maxhp;
+    unit.hp = template.maxhp;
     unit.str = template.str;
     unit.skl = template.skl;
     unit.spd = template.spd;
@@ -259,6 +261,7 @@ export class MapsUnitView extends LitElement{
                     </div>
                     <div class="stat-blocks">
                         <div class="stat-div">  HP: <input class="stat-input" type="number" id=${unitid + "-maxhp"} .value=${unit.maxhp ? unit.maxhp : 0} @change=${(e) => {this.updateStat("maxhp")}}> 
+                                                Level: <input class="stat-input" type="number" id=${unitid + "-level"} .value=${unit.level ? unit.level : 1} @change=${(e) => {this.updateStat("level")}}> 
                         </div>
                         <div class="stat-div">  STR: <input class="stat-input" type="number" id=${unitid + "-str"} .value=${unit.str ? unit.str : 0} @change=${(e) => {this.updateStat("str")}}> 
                                                 LUK: <input class="stat-input" type="number" id=${unitid + "-luk"} .value=${unit.luk ? unit.luk : 0} @change=${(e) => {this.updateStat("luk")}}></div>

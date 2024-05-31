@@ -402,7 +402,7 @@ export class MapsPage extends LitElement {
   }
   cellClass(cell,x,y){
     let classString = "map-cell";
-    if(x == this.activeTile.x && y == this.activeTile.y){
+    if(this.activeTile && x == this.activeTile.x && y == this.activeTile.y){
       classString += " map-cell-selected";
     }
     if(cell.walls){
@@ -492,6 +492,9 @@ export class MapsPage extends LitElement {
   removeInteract(interact,cell){
     cell.interactions = cell.interactions.filter(x => x != interact);
     this.interactIdsList = this.interactIdsList.filter(x => x != interact.id);
+    if(cell.interactions.length == 0){
+      delete(cell.interactions);
+    }
     this.requestUpdate();
   }
   mousedown(x,y){
